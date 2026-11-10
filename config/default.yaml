@@ -1,0 +1,32 @@
+seed: 42
+
+models:
+  nli_model_name: "MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli"
+  nli_fallback_name: "cross-encoder/nli-deberta-v3-base"
+  hhem_model_name: "vectara/hallucination_evaluation_model"
+  embedding_model_name: "sentence-transformers/all-MiniLM-L6-v2"
+  device: "auto"  # "cuda", "cpu", or "auto"
+  batch_size: 16
+
+chunking:
+  chunk_tokens: 256
+  stride: 128
+
+retrieval:
+  top_k: 3
+
+thresholds:
+  tau_support: 0.5
+  tau_contra: 0.5
+  tau_answer: 0.5
+  tau_baseline: 0.5
+  alpha_abstain: 0.6
+
+calibration:
+  temperature: 1.0
+
+paths:
+  demo_data: "data/sample/demo.jsonl"
+  ragtruth_root: "data/ragtruth"
+  results_dir: "results"
+  injected_data: "results/perturbed_eval.jsonl"
