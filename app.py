@@ -7,18 +7,37 @@ import base64
 
 st.set_page_config(page_title="Nova Guardrail AI", page_icon="⚡", layout="wide")
 
+# --- UPGRADED UI CSS ---
 st.markdown("""
 <style>
-    .stTextArea textarea {background-color: #1e2129; color: #ffffff; border: 1px solid #00d2ff; border-radius: 8px;}
-    .stButton>button {background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%); color: white; border: none; border-radius: 8px; font-weight: bold; padding: 0.75rem; transition: all 0.3s;}
-    .stButton>button:hover {transform: scale(1.02); box-shadow: 0px 4px 15px rgba(0, 210, 255, 0.4);}
-    h1, h2, h3 {font-family: 'Segoe UI', sans-serif;}
-    .title-glow {color: #00d2ff; text-shadow: 0 0 10px rgba(0,210,255,0.3);}
+    /* Global Font and Background Styling */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+    html, body, [class*="css"] {font-family: 'Inter', sans-serif;}
+    
+    /* Input Areas */
+    .stTextArea textarea {background-color: #111827; color: #f3f4f6; border: 1px solid #374151; border-radius: 12px; padding: 12px; font-size: 15px;}
+    .stTextArea textarea:focus {border: 1px solid #00d2ff; box-shadow: 0 0 10px rgba(0, 210, 255, 0.3);}
+    
+    /* Scan Button */
+    .stButton>button {background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 800; padding: 0.8rem; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.3);}
+    .stButton>button:hover {transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 210, 255, 0.5);}
+    
+    /* Headers & Text */
+    .title-glow {color: #ffffff; text-shadow: 0 0 20px rgba(0,210,255,0.6); font-weight: 800; font-size: 2.8rem; letter-spacing: -1px; margin-bottom: 0;}
+    .subtitle {color: #9ca3af; font-size: 1.2rem; font-weight: 600; margin-top: -10px; margin-bottom: 25px;}
+    
+    /* Metrics Upgrades */
+    div[data-testid="stMetricValue"] {color: #00d2ff; font-weight: 800; text-shadow: 0 0 15px rgba(0,210,255,0.3);}
+    div[data-testid="stMetricLabel"] {color: #9ca3af; font-size: 1rem;}
+    
+    /* Alert Banners */
+    div[data-testid="stAlert"] {border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2);}
 </style>
 """, unsafe_allow_html=True)
 
+# --- HEADER ---
 st.markdown("<h1 class='title-glow'>⚡ Nova SLM Guardrail</h1>", unsafe_allow_html=True)
-st.markdown("### Advanced Context & Hallucination Engine")
+st.markdown("<div class='subtitle'>Contextual Fact-Matching & Hallucination Engine</div>", unsafe_allow_html=True)
 st.markdown("---")
 
 scenarios = {
@@ -54,29 +73,34 @@ scenarios = {
         "answer": "To reset, immediately unplug the main power cable from the wall."
     }
 }
+
+# --- SIDEBAR ---
 st.sidebar.markdown("## ⚙️ Control Panel")
 selected_scenario = st.sidebar.radio("Select Test Case:", list(scenarios.keys()))
 
 st.sidebar.markdown("---")
+st.sidebar.markdown("### 🎓 Project Details")
+st.sidebar.info("**Developer:** Rachana Urs HR\n\n**Program:** Master of Computer Applications (MCA)\n\n**Component:** RAG Hallucination Detector")
+
+# --- MAIN INPUT AREAS ---
 col1, col2 = st.columns(2)
 with col1:
     st.markdown("#### 📄 Ground Truth (Context)")
-    context_input = st.text_area("context", height=200, value=scenarios[selected_scenario]["context"], label_visibility="collapsed")
+    context_input = st.text_area("context", height=220, value=scenarios[selected_scenario]["context"], label_visibility="collapsed")
 with col2:
     st.markdown("#### 🤖 AI Response")
-    answer_input = st.text_area("answer", height=200, value=scenarios[selected_scenario]["answer"], label_visibility="collapsed")
+    answer_input = st.text_area("answer", height=220, value=scenarios[selected_scenario]["answer"], label_visibility="collapsed")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
+# --- EXECUTION LOGIC ---
 if st.button("🚀 Run Hallucination Scan", use_container_width=True):
     if context_input and answer_input:
-        with st.spinner("Analyzing cross-attention logic..."):
+        with st.spinner("Analyzing semantic attention and fact entailment..."):
             
-            # THE FIX: Encode inputs to Base64 to bypass all command-line parsing bugs
             ctx_b64 = base64.b64encode(context_input.encode('utf-8')).decode('utf-8')
             ans_b64 = base64.b64encode(answer_input.encode('utf-8')).decode('utf-8')
             
-            # The Nuclear Option: Run the python function directly instead of using the CLI
             wrapper_script = f"""import sys, os, base64
 sys.path.insert(0, os.path.abspath('src'))
 from halludetect.cli import verify
@@ -111,7 +135,6 @@ verify(context=ctx, answer=ans, config='config/default.yaml')
                         m3.metric("Scan Latency", f"{data.get('latency_ms', 0):.0f} ms")
                         st.markdown("<br>", unsafe_allow_html=True)
                     
-                    # THE FIX: Read the actual True/False boolean from the JSON
                     if data.get("hallucinated") is True:
                         st.error("🚨 **CRITICAL RISK:** The AI hallucinated or contradicted the secure context.")
                     else:
