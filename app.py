@@ -36,6 +36,10 @@ scenarios = {
         "context": "Data normalization scales numerical variables into a standard range, usually 0 to 1, to prevent features with larger variance from dominating the machine learning model.",
         "answer": "To stop features with high variance from dominating a model, data normalization is used to scale numerical variables between 0 and 1."
     },
+    "✅ Safe: Pure Fact Matching": {
+        "context": "Python is an interpreted, high-level programming language created by Guido van Rossum.",
+        "answer": "Guido van Rossum designed Python, which executes code line-by-line rather than being compiled."
+    },
     
     "🚨 Risk: Corporate HR Policy": {
         "context": "Employees are entitled to 14 days of paid leave per year. Remote work is strictly prohibited on Mondays and Fridays.",
