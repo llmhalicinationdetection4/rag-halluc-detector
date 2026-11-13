@@ -106,21 +106,21 @@ verify(context=ctx, answer=ans, config='config/default.yaml')
                         m2.metric("Contradiction Risk", f"{p_contra:.1f}%")
                         m3.metric("Scan Latency", f"{data.get('latency_ms', 0):.0f} ms")
                         st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    # THE FIX: Read the actual True/False boolean from the JSON
+                    if data.get("hallucinated") is True:
+                        st.error("🚨 **CRITICAL RISK:** The AI hallucinated or contradicted the secure context.")
+                    else:
+                        st.success("✅ **CLEARED:** The response is fully grounded in the provided context.")
+                        
                 except Exception:
-                    pass
-                
-                output_lower = output_text.lower()
-                if "hallucinated" in output_lower and "not hallucinated" not in output_lower:
-                    st.error("🚨 **CRITICAL RISK:** The AI hallucinated or contradicted the secure context.")
-                else:
-                    st.success("✅ **CLEARED:** The response is fully grounded in the provided context.")
+                    st.warning("⚠️ Could not parse the verdict.")
                 
                 with st.expander("raw_backend_telemetry.json"):
                     try:
-                        # Intercept the JSON and inject the model details
                         log_data = json.loads(output_text)
                         log_data["active_engine"] = "Vectara HHEM (Zero-Shot)"
-                        log_data["embedding_model"] = "MiniLM-L6-v2" # Standard default
+                        log_data["embedding_model"] = "MiniLM-L6-v2"
                         st.code(json.dumps(log_data, indent=2), language="json")
                     except Exception:
                         st.code(output_text, language="json")
