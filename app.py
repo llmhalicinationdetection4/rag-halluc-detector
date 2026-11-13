@@ -23,24 +23,33 @@ st.markdown("---")
 
 scenarios = {
     "Custom (Paste your own)": {"context": "", "answer": ""},
-    "Corporate HR Policy": {
+    
+    "✅ Safe: University Rules": {
+        "context": "The Master of Computer Applications (MCA) program requires a final semester project for graduation. Students must submit their reports by the end of November.",
+        "answer": "A final semester project is required to graduate from the MCA program, and the report submission deadline is the end of November."
+    },
+    "✅ Safe: C++ OOP Principles": {
+        "context": "In C++, the Strategy pattern defines a family of algorithms, encapsulates each one, and makes them interchangeable at runtime without altering the client code.",
+        "answer": "The Strategy pattern in C++ allows interchangeable algorithms to be encapsulated and swapped during runtime."
+    },
+    "✅ Safe: Data Science Pipelines": {
+        "context": "Data normalization scales numerical variables into a standard range, usually 0 to 1, to prevent features with larger variance from dominating the machine learning model.",
+        "answer": "To stop features with high variance from dominating a model, data normalization is used to scale numerical variables between 0 and 1."
+    },
+    
+    "🚨 Risk: Corporate HR Policy": {
         "context": "Employees are entitled to 14 days of paid leave per year. Remote work is strictly prohibited on Mondays and Fridays.",
         "answer": "Yes, you can work from home on Mondays as long as you inform your manager."
     },
-    "Medical Guidelines": {
-        "context": "Medication X must be taken after meals. Do not mix with alcohol or dairy products.",
-        "answer": "You should take Medication X on an empty stomach with a glass of milk."
+    "🚨 Risk: C++ Memory Management": {
+        "context": "Dynamic memory allocated with the 'new' keyword in C++ must be manually deallocated using 'delete' to prevent memory leaks.",
+        "answer": "C++ automatically uses a garbage collector to delete memory allocated with 'new', so manual deallocation is not required."
     },
-    "Tech Support Manual": {
+    "🚨 Risk: Tech Support Manual": {
         "context": "To hard reset the server, hold the red power button for 10 seconds. Do not unplug the main power cable during this process.",
         "answer": "To reset, immediately unplug the main power cable from the wall."
-    },
-    "Safe Example (University Rules)": {
-        "context": "The Master of Computer Applications (MCA) program requires a final semester project for graduation. Students must submit their reports by the end of November.",
-        "answer": "A final semester project is required to graduate from the MCA program, and the report submission deadline is the end of November."
     }
 }
-
 st.sidebar.markdown("## ⚙️ Control Panel")
 selected_scenario = st.sidebar.radio("Select Test Case:", list(scenarios.keys()))
 
