@@ -62,8 +62,8 @@ if st.button("🚀 Run Hallucination Scan", use_container_width=True):
             # FIX: Bind the flag and string tightly with "=" to prevent Linux spacing separation
             command = [
                 sys.executable, "-m", "halludetect", "verify", 
-                f"--context={context_input}", 
-                f"--answer={answer_input}"
+                "--context", context_input, 
+                "--answer", answer_input
             ]
             
             result = subprocess.run(command, capture_output=True, text=True, env=env)
