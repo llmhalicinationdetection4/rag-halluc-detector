@@ -3,6 +3,7 @@ import subprocess
 import sys
 import json
 import os
+import base64
 
 st.set_page_config(page_title="Nova Guardrail AI", page_icon="⚡", layout="wide")
 
@@ -56,16 +57,22 @@ st.markdown("<br>", unsafe_allow_html=True)
 if st.button("🚀 Run Hallucination Scan", use_container_width=True):
     if context_input and answer_input:
         with st.spinner("Analyzing cross-attention logic..."):
-            env = os.environ.copy()
-            env["PYTHONPATH"] = "src"
             
-            command = [
-                sys.executable, "-m", "halludetect", "verify", 
-                "--context", context_input, 
-                "--answer", answer_input
-            ]
+            # THE FIX: Encode inputs to Base64 to bypass all command-line parsing bugs
+            ctx_b64 = base64.b64encode(context_input.encode('utf-8')).decode('utf-8')
+            ans_b64 = base64.b64encode(answer_input.encode('utf-8')).decode('utf-8')
             
-            result = subprocess.run(command, capture_output=True, text=True, env=env)
+            # The Nuclear Option: Run the python function directly instead of using the CLI
+            wrapper_script = f"""import sys, os, base64
+sys.path.insert(0, os.path.abspath('src'))
+from halludetect.cli import verify
+ctx = base64.b64decode('{ctx_b64}').decode('utf-8')
+ans = base64.b64decode('{ans_b64}').decode('utf-8')
+verify(context=ctx, answer=ans, config='config/default.yaml')
+"""
+            
+            command = [sys.executable, "-c", wrapper_script]
+            result = subprocess.run(command, capture_output=True, text=True)
             output_text = result.stdout.strip()
             error_output = result.stderr
             
@@ -99,4 +106,4 @@ if st.button("🚀 Run Hallucination Scan", use_container_width=True):
                     st.success("✅ **CLEARED:** The response is fully grounded in the provided context.")
                 
                 with st.expander("raw_backend_telemetry.json"):
-                    st.code(output_text, language="json")
+                    st.code(output_text, language="json")s
