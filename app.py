@@ -106,4 +106,4 @@ verify(context=ctx, answer=ans, config='config/default.yaml')
                     st.success("✅ **CLEARED:** The response is fully grounded in the provided context.")
                 
                 with st.expander("raw_backend_telemetry.json"):
-                    st.code(output_text, language="json")s
+                    st.code(output_text, language="json")
