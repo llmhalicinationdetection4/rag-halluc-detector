@@ -21,7 +21,7 @@ st.markdown("""
         padding-top: 1rem !important;
     }
     [data-testid="stHeader"] {
-        background-color: transparent !important;
+        background-color: solid !important;
     }
     </style>
 """, unsafe_allow_html=True)
