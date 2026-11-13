@@ -106,7 +106,7 @@ verify(context=ctx, answer=ans, config='config/default.yaml')
                 else:
                     st.success("✅ **CLEARED:** The response is fully grounded in the provided context.")
                 
-               with st.expander("raw_backend_telemetry.json"):
+                with st.expander("raw_backend_telemetry.json"):
                     try:
                         # Intercept the JSON and inject the model details
                         log_data = json.loads(output_text)
