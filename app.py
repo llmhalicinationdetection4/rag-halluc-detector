@@ -137,7 +137,7 @@ selected_scenario = st.sidebar.radio("Select Test Case:", list(scenarios.keys())
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🎓 Project Details")
-st.sidebar.info("**Team Members:**\n -Shashank L\n- Yashwanth BR \n- Rachana Urs HR\n- Thrishank P\n\n**Program:** Master of Computer Applications (MCA)\n\n**Component:** RAG Hallucination Detector")
+st.sidebar.info("**Team Members:**\n- Shashank L\n- Yashwanth BR \n- Rachana Urs HR\n- Thrishank P\n\n**Program:** Master of Computer Applications (MCA)\n\n**Component:** RAG Hallucination Detector")
 # --- MAIN INPUT AREAS ---
 col1, col2 = st.columns(2)
 with col1:
