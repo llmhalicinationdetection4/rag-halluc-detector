@@ -44,6 +44,10 @@ scenarios = {
 st.sidebar.markdown("## ⚙️ Control Panel")
 selected_scenario = st.sidebar.radio("Select Test Case:", list(scenarios.keys()))
 
+st.sidebar.markdown("---")
+st.sidebar.markdown("### 🧠 Engine Status")
+st.sidebar.info("**Active Guardrail:**\n`Vectara HHEM` (Zero-Shot)")
+# ------------------------------------
 col1, col2 = st.columns(2)
 with col1:
     st.markdown("#### 📄 Ground Truth (Context)")
