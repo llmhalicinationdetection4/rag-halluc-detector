@@ -13,6 +13,11 @@ st.markdown("""
     /* Global Font and Background Styling */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
     html, body, [class*="css"] {font-family: 'Inter', sans-serif;}
+
+    /* Remove default Streamlit top padding */
+    .block-container {
+        padding-top: 1.5rem !important;
+    }
     
     /* Input Areas */
     .stTextArea textarea {background-color: #111827; color: #f3f4f6; border: 1px solid #374151; border-radius: 12px; padding: 12px; font-size: 15px;}
