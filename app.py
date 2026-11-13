@@ -10,34 +10,17 @@ st.set_page_config(page_title="Nova Guardrail AI", page_icon="⚡", layout="wide
 # --- UPGRADED UI CSS ---
 st.markdown("""
 <style>
-    /* Global Font and Background Styling */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-    html, body, [class*="css"] {font-family: 'Inter', sans-serif;}
-
-    /* Remove default Streamlit top padding */
+/* Aggressively remove Streamlit top padding */
     .block-container {
-        padding-top: 1.5rem !important;
+        padding-top: 1rem !important;
     }
-    
-    /* Input Areas */
-    .stTextArea textarea {background-color: #111827; color: #f3f4f6; border: 1px solid #374151; border-radius: 12px; padding: 12px; font-size: 15px;}
-    .stTextArea textarea:focus {border: 1px solid #00d2ff; box-shadow: 0 0 10px rgba(0, 210, 255, 0.3);}
-    
-    /* Scan Button */
-    .stButton>button {background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: 800; padding: 0.8rem; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.3);}
-    .stButton>button:hover {transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 210, 255, 0.5);}
-    
-    /* Headers & Text */
-    .title-glow {color: #ffffff; text-shadow: 0 0 20px rgba(0,210,255,0.6); font-weight: 800; font-size: 2.8rem; letter-spacing: -1px; margin-bottom: 0;}
-    .subtitle {color: #9ca3af; font-size: 1.2rem; font-weight: 600; margin-top: -10px; margin-bottom: 25px;}
-    
-    /* Metrics Upgrades */
-    div[data-testid="stMetricValue"] {color: #00d2ff; font-weight: 800; text-shadow: 0 0 15px rgba(0,210,255,0.3);}
-    div[data-testid="stMetricLabel"] {color: #9ca3af; font-size: 1rem;}
-    
-    /* Alert Banners */
-    div[data-testid="stAlert"] {border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2);}
-</style>
+    [data-testid="stAppViewBlockContainer"] {
+        padding-top: 1rem !important;
+    }
+    [data-testid="stHeader"] {
+        background-color: transparent !important;
+    }
+    </style>
 """, unsafe_allow_html=True)
 
 # --- HEADER ---
