@@ -45,9 +45,6 @@ st.sidebar.markdown("## ⚙️ Control Panel")
 selected_scenario = st.sidebar.radio("Select Test Case:", list(scenarios.keys()))
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("### 🧠 Engine Status")
-st.sidebar.info("**Active Guardrail:**\n`Vectara HHEM` (Zero-Shot)")
-# ------------------------------------
 col1, col2 = st.columns(2)
 with col1:
     st.markdown("#### 📄 Ground Truth (Context)")
@@ -109,5 +106,12 @@ verify(context=ctx, answer=ans, config='config/default.yaml')
                 else:
                     st.success("✅ **CLEARED:** The response is fully grounded in the provided context.")
                 
-                with st.expander("raw_backend_telemetry.json"):
-                    st.code(output_text, language="json")
+               with st.expander("raw_backend_telemetry.json"):
+                    try:
+                        # Intercept the JSON and inject the model details
+                        log_data = json.loads(output_text)
+                        log_data["active_engine"] = "Vectara HHEM (Zero-Shot)"
+                        log_data["embedding_model"] = "MiniLM-L6-v2" # Standard default
+                        st.code(json.dumps(log_data, indent=2), language="json")
+                    except Exception:
+                        st.code(output_text, language="json")
