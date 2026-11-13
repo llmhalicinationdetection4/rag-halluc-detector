@@ -14,6 +14,16 @@ st.markdown("""
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
     html, body, [class*="css"] {font-family: 'Inter', sans-serif;}
     
+    /* Premium App Background Gradient */
+    .stApp, [data-testid="stAppViewContainer"] {
+        background: radial-gradient(circle at top left, #0d1b2a 0%, #050505 100%) !important;
+        background-attachment: fixed !important;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #030406 !important;
+        border-right: 1px solid #1f2937 !important;
+    }
+    
     /* Aggressively remove Streamlit top padding */
     .block-container, [data-testid="stAppViewBlockContainer"], [data-testid="stSidebarUserContent"] {
         padding-top: 1.5rem !important;
@@ -24,7 +34,8 @@ st.markdown("""
     
     /* Premium Input Areas */
     div[data-testid="stTextArea"] textarea {
-        background-color: #0f141e !important;
+        background-color: rgba(15, 20, 30, 0.6) !important;
+        backdrop-filter: blur(10px) !important;
         color: #f3f4f6 !important;
         border: 1px solid #2d3748 !important;
         border-radius: 10px !important;
@@ -64,7 +75,7 @@ st.markdown("""
     
     /* Sidebar Project Details Glow */
     div[data-testid="stSidebar"] div[data-testid="stAlert"] {
-        background: linear-gradient(180deg, #111827 0%, #1a202c 100%) !important;
+        background: linear-gradient(180deg, #0f141e 0%, #1a202c 100%) !important;
         border: 1px solid #0072ff !important;
         border-left: 4px solid #00d2ff !important;
         color: #e2e8f0 !important;
