@@ -10,11 +10,14 @@ st.set_page_config(page_title="Nova Guardrail AI", page_icon="⚡", layout="wide
 # --- UPGRADED UI CSS ---
 st.markdown("""
 <style>
-/* Aggressively remove Streamlit top padding */
+/* Aggressively remove Streamlit top padding (Main Body & Sidebar) */
     .block-container {
         padding-top: 1rem !important;
     }
     [data-testid="stAppViewBlockContainer"] {
+        padding-top: 1rem !important;
+    }
+    [data-testid="stSidebarUserContent"] {
         padding-top: 1rem !important;
     }
     [data-testid="stHeader"] {
