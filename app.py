@@ -59,7 +59,6 @@ if st.button("🚀 Run Hallucination Scan", use_container_width=True):
             env = os.environ.copy()
             env["PYTHONPATH"] = "src"
             
-            # FIX: Bind the flag and string tightly with "=" to prevent Linux spacing separation
             command = [
                 sys.executable, "-m", "halludetect", "verify", 
                 "--context", context_input, 
@@ -74,15 +73,9 @@ if st.button("🚀 Run Hallucination Scan", use_container_width=True):
             st.markdown("### 📊 Guardrail Analysis Report")
             
             if error_output and not output_text:
-                st.error("🚨 **SYSTEM FAULT:** The backend CLI rejected the input format.")
+                st.error("🚨 **SYSTEM FAULT:** The backend failed to run. See logs below.")
                 with st.expander("View Error Trace"): 
                     st.code(error_output)
-                
-                # DIAGNOSTIC: Automatically display the backend's expected flags if it fails
-                help_cmd = [sys.executable, "-m", "halludetect", "verify", "--help"]
-                help_result = subprocess.run(help_cmd, capture_output=True, text=True, env=env)
-                st.info("💡 **Auto-Diagnostic: Backend Help Manual** (Check what the flags should actually be named)")
-                st.code(help_result.stdout)
             else:
                 try:
                     data = json.loads(output_text)
