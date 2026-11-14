@@ -5,22 +5,22 @@ import json
 import os
 import base64
 
-st.set_page_config(page_title="Nova Guardrail AI", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="Nova Guardrail AI", page_icon="🛡️", layout="wide")
 
-# --- UPGRADED UI CSS ---
+# --- ENTERPRISE GUARDRAIL UI CSS ---
 st.markdown("""
 <style>
     /* Global Font and Background Styling */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
     html, body, [class*="css"] {font-family: 'Inter', sans-serif;}
     
-    /* Premium App Background Gradient */
+    /* Enterprise Security Background (Deep Slate to Black) */
     .stApp, [data-testid="stAppViewContainer"] {
-        background: radial-gradient(circle at top left, #0d1b2a 0%, #050505 100%) !important;
+        background: radial-gradient(circle at top center, #111827 0%, #030712 100%) !important;
         background-attachment: fixed !important;
     }
     [data-testid="stSidebar"] {
-        background-color: #030406 !important;
+        background-color: #0b0f19 !important;
         border-right: 1px solid #1f2937 !important;
     }
     
@@ -32,69 +32,70 @@ st.markdown("""
         background-color: transparent !important;
     }
     
-    /* Premium Input Areas */
+    /* Secure Terminal Input Areas */
     div[data-testid="stTextArea"] textarea {
-        background-color: rgba(15, 20, 30, 0.6) !important;
-        backdrop-filter: blur(10px) !important;
-        color: #f3f4f6 !important;
-        border: 1px solid #2d3748 !important;
-        border-radius: 10px !important;
-        padding: 14px !important;
-        font-size: 15px !important;
-        box-shadow: inset 0 2px 5px rgba(0,0,0,0.5) !important;
-        transition: border 0.3s ease, box-shadow 0.3s ease !important;
+        background-color: #0f1523 !important;
+        color: #e2e8f0 !important;
+        border: 1px solid #334155 !important;
+        border-radius: 6px !important;
+        padding: 16px !important;
+        font-size: 14px !important;
+        font-family: monospace !important; /* Gives it a raw data/coding feel */
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.4) !important;
+        transition: border 0.2s ease !important;
     }
     div[data-testid="stTextArea"] textarea:focus {
-        border: 1px solid #00d2ff !important;
-        box-shadow: 0 0 12px rgba(0, 210, 255, 0.2) !important;
+        border: 1px solid #0ea5e9 !important;
+        box-shadow: 0 0 8px rgba(14, 165, 233, 0.3) !important;
     }
     
-    /* Vibrant Gradient Scan Button */
+    /* Enterprise Verification Button */
     div[data-testid="stButton"] button {
-        background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%) !important;
+        background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%) !important;
         color: white !important;
-        border: none !important;
-        border-radius: 10px !important;
-        font-size: 18px !important;
-        font-weight: 800 !important;
+        border: 1px solid #38bdf8 !important;
+        border-radius: 6px !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
         letter-spacing: 0.5px !important;
-        padding: 0.75rem 2rem !important;
-        box-shadow: 0 4px 15px rgba(0, 198, 255, 0.3) !important;
-        transition: all 0.3s ease !important;
+        padding: 0.6rem 2rem !important;
+        box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2) !important;
+        transition: all 0.2s ease !important;
     }
     div[data-testid="stButton"] button:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 6px 25px rgba(0, 198, 255, 0.6) !important;
+        box-shadow: 0 6px 15px rgba(14, 165, 233, 0.4) !important;
+        border: 1px solid #7dd3fc !important;
     }
     
-    /* Custom Neon Dividers */
+    /* Sleek Dividers */
     hr {
-        border-top: 1px solid rgba(0, 210, 255, 0.15) !important;
+        border-top: 1px solid #1e293b !important;
         margin: 1.5em 0 !important;
     }
     
-    /* Sidebar Project Details Glow */
+    /* Sidebar Project Details Card */
     div[data-testid="stSidebar"] div[data-testid="stAlert"] {
-        background: linear-gradient(180deg, #0f141e 0%, #1a202c 100%) !important;
-        border: 1px solid #0072ff !important;
-        border-left: 4px solid #00d2ff !important;
-        color: #e2e8f0 !important;
-        box-shadow: 0 0 15px rgba(0, 114, 255, 0.15) !important;
+        background-color: #0f172a !important;
+        border: 1px solid #1e293b !important;
+        border-left: 4px solid #0ea5e9 !important;
+        color: #cbd5e1 !important;
+        border-radius: 4px !important;
     }
     
     /* Headers & Text */
-    .title-glow {color: #ffffff; text-shadow: 0 0 25px rgba(0,210,255,0.7); font-weight: 800; font-size: 2.8rem; letter-spacing: -1px; margin-bottom: 0;}
-    .subtitle {color: #00d2ff; font-size: 1.1rem; font-weight: 600; margin-top: -10px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px;}
+    .title-glow {color: #f8fafc; font-weight: 700; font-size: 2.4rem; letter-spacing: -0.5px; margin-bottom: 0;}
+    .subtitle {color: #38bdf8; font-size: 1rem; font-weight: 500; margin-top: -5px; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1.5px;}
     
     /* Metrics Upgrades */
-    div[data-testid="stMetricValue"] {color: #00d2ff !important; font-weight: 800 !important; text-shadow: 0 0 10px rgba(0,210,255,0.2) !important;}
-    div[data-testid="stMetricLabel"] {color: #9ca3af !important; font-size: 1rem !important;}
+    div[data-testid="stMetricValue"] {color: #38bdf8 !important; font-weight: 700 !important;}
+    div[data-testid="stMetricLabel"] {color: #94a3b8 !important; font-size: 0.9rem !important; text-transform: uppercase; letter-spacing: 0.5px;}
 </style>
 """, unsafe_allow_html=True)
 
 # --- HEADER ---
-st.markdown("<h1 class='title-glow'>⚡ Nova SLM Guardrail</h1>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Contextual Fact-Matching & Hallucination Engine</div>", unsafe_allow_html=True)
+st.markdown("<h1 class='title-glow'>🛡️ Nova SLM Guardrail</h1>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Enterprise Fact-Matching & Risk Engine</div>", unsafe_allow_html=True)
 st.markdown("---")
 
 scenarios = {
@@ -137,22 +138,24 @@ selected_scenario = st.sidebar.radio("Select Test Case:", list(scenarios.keys())
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 🎓 Project Details")
-st.sidebar.info("**Team Members:**\n- Shashank L\n- Yashwanth BR \n- Rachana Urs HR\n- Thrishank P\n\n**Program:** Master of Computer Applications (MCA)\n\n**Component:** RAG Hallucination Detector")
+# Update your teammates' names here:
+st.sidebar.info("**Team Members:**\n- Rachana Urs HR\n- [Team Member 2]\n- [Team Member 3]\n- [Team Member 4]\n\n**Program:** Master of Computer Applications (MCA)\n\n**Component:** AI Hallucination Detector")
+
 # --- MAIN INPUT AREAS ---
 col1, col2 = st.columns(2)
 with col1:
-    st.markdown("#### 📄 Ground Truth (Context)")
+    st.markdown("#### 📄 Ground Truth (Secure Context)")
     context_input = st.text_area("context", height=220, value=scenarios[selected_scenario]["context"], label_visibility="collapsed")
 with col2:
-    st.markdown("#### 🤖 AI Response")
+    st.markdown("#### 🤖 Unverified AI Response")
     answer_input = st.text_area("answer", height=220, value=scenarios[selected_scenario]["answer"], label_visibility="collapsed")
 
 st.markdown("<br>", unsafe_allow_html=True)
 
 # --- EXECUTION LOGIC ---
-if st.button("🚀 Run Hallucination Scan", use_container_width=True):
+if st.button("🚀 Execute Guardrail Scan", use_container_width=True):
     if context_input and answer_input:
-        with st.spinner("Analyzing semantic attention and fact entailment..."):
+        with st.spinner("Authenticating facts and computing cross-attention arrays..."):
             
             ctx_b64 = base64.b64encode(context_input.encode('utf-8')).decode('utf-8')
             ans_b64 = base64.b64encode(answer_input.encode('utf-8')).decode('utf-8')
