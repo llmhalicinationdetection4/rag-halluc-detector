@@ -28,3 +28,25 @@ def map_spans_to_claims(response_text: str, claims: list, hallucinated_spans: li
         claim_labels.append(is_hallucinated)
         
     return claim_labels
+
+def convert_ragtruth_labels(labels: list) -> list:
+    """Converts RAGTruth label dicts to [start, end] pairs."""
+    return [[lbl["start"], lbl["end"]] for lbl in labels if "start" in lbl and "end" in lbl]
+
+def map_claims_to_spans(claims_results: list, answer: str) -> list:
+    """Maps claim-level model scores back to character spans in the answer."""
+    spans = []
+    current_idx = 0
+    for res in claims_results:
+        claim_text = res["claim"]
+        start_idx = answer.find(claim_text, current_idx)
+        if start_idx != -1:
+            end_idx = start_idx + len(claim_text)
+            spans.append({
+                "start": start_idx,
+                "end": end_idx,
+                "p_contra": res.get("p_contra", 0.0),
+                "p_entail": res.get("p_entail", 0.0)
+            })
+            current_idx = end_idx
+    return spans

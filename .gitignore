@@ -13,3 +13,8 @@ results/*
 !results/phase1_predictions.csv
 papers/
 .ipynb_checkpoints/
+# Archives
+*.tar
+*.zip
+*.tar.gz
+results/cache/phase3_predictions.jsonl

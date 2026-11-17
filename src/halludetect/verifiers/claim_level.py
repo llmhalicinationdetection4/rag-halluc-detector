@@ -62,11 +62,12 @@ class ClaimLevelVerifier:
             
         claims = self._split_claims(answer)
         if not claims:
-            return {"score": 1.0, "hallucinated": False, "claims": []}
+            return {"claims": []}
             
         chunks = self._chunk_context(context)
         if not chunks:
-            return {"score": 0.0, "hallucinated": True, "claims": claims}
+            # If no context chunks exist, default to maximum contradiction
+            return {"claims": [{"claim": c, "p_entail": 0.0, "p_contra": 1.0} for c in claims]}
 
         # Embed chunks ONCE per context
         chunk_embeddings = self.retriever.encode(chunks, convert_to_tensor=True)
@@ -90,22 +91,52 @@ class ClaimLevelVerifier:
             logits = self.nli_model(**inputs).logits
             probs = torch.softmax(logits, dim=1)
             
+        # Extract dynamic label mappings for entails/contradicts
         entailment_idx = self.nli_model.config.label2id.get("entailment", 0)
+        contra_idx = self.nli_model.config.label2id.get("contradiction", 2)
+        
         entailment_probs = probs[:, entailment_idx].cpu().tolist()
+        contra_probs = probs[:, contra_idx].cpu().tolist()
 
-        # Max entailment over the retrieved chunks for each claim
+        # Max entailment and max contradiction over the retrieved chunks for each claim
         claim_scores = {}
-        for claim_idx, score in zip(pair_map, entailment_probs):
-            if claim_idx not in claim_scores or score > claim_scores[claim_idx]:
-                claim_scores[claim_idx] = score
+        for claim_idx, e_score, c_score in zip(pair_map, entailment_probs, contra_probs):
+            if claim_idx not in claim_scores:
+                claim_scores[claim_idx] = {"p_entail": e_score, "p_contra": c_score}
+            else:
+                if e_score > claim_scores[claim_idx]["p_entail"]:
+                    claim_scores[claim_idx]["p_entail"] = e_score
+                if c_score > claim_scores[claim_idx]["p_contra"]:
+                    claim_scores[claim_idx]["p_contra"] = c_score
 
-        final_claims = [{"text": claims[i], "score": claim_scores.get(i, 0.0)} for i in range(len(claims))]
+        # Format final output for the phase3 evaluator and span_mapping
+        final_claims = []
+        for i in range(len(claims)):
+            scores = claim_scores.get(i, {"p_entail": 0.0, "p_contra": 0.0})
+            final_claims.append({
+                "claim": claims[i],
+                "p_entail": scores["p_entail"],
+                "p_contra": scores["p_contra"]
+            })
         
-        # Mean aggregation for the final whole-context score
-        overall_score = sum(c["score"] for c in final_claims) / len(final_claims)
+        # Calculate an overall document score (e.g., max contradiction or mean entailment)
+        # Calculate overall document score and a default boolean for test schema compliance
+        # Format final output for the phase3 evaluator, span_mapping, and test suite
+        final_claims = []
+        for i in range(len(claims)):
+            scores = claim_scores.get(i, {"p_entail": 0.0, "p_contra": 0.0})
+            final_claims.append({
+                "claim": claims[i],
+                "score": scores["p_entail"],  # Added back for test suite compatibility
+                "p_entail": scores["p_entail"],
+                "p_contra": scores["p_contra"]
+            })
         
+        p_contras = [c.get("p_contra", 0.0) for c in final_claims]
+        overall_score = max(p_contras) if p_contras else 0.0
+
         return {
             "score": overall_score,
-            "hallucinated": overall_score < 0.990, 
+            "hallucinated": overall_score >= 0.5,
             "claims": final_claims
         }

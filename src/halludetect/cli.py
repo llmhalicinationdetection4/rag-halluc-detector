@@ -52,6 +52,13 @@ def eval_cmd(
     run_phase1(load_config(config), dataset=dataset, max_examples=max_examples, use_hhem=hhem)
 
 
+@app.command("phase3")
+def phase3_cmd():
+    """Run Phase 3 claim-level verifier training, evaluation, and CIs."""
+    from halludetect.eval.run_phase3 import run_evaluation
+    run_evaluation()
+
+
 @app.command("inspect-ragtruth")
 def inspect_cmd(
     dir: Path = typer.Option(None, help="Folder with response.jsonl and source_info.jsonl"),
@@ -70,7 +77,7 @@ def inject(
     max_per_type: int = typer.Option(200, help="Max injected examples per task and error type"),
     out: Path = typer.Option(None, help="Output file (default: results/phase2_injected.jsonl)"),
     allow_regex_entities: bool = typer.Option(False, "--allow-regex-entities",
-                                              help="Use a rough regex instead of spaCy for entity swaps"),
+                                               help="Use a rough regex instead of spaCy for entity swaps"),
     config: Path = typer.Option(None, help="Path to a config YAML"),
 ):
     """Phase 2: build the injected-error test set from faithful RAGTruth test responses (no GPU needed)."""
@@ -100,8 +107,8 @@ def analyze(
 
 
 @app.command()
-def serve(port: int = typer.Option(8501, help="Port for the dashboard")):
-    """Launch the Streamlit dashboard (app.py in the project root)."""
+def serve(port: int = typer.Option(8000, help="Port for the FastAPI server")):
+    """Launch the FastAPI server (app.py in the project root)."""
     import subprocess
     import sys
 
@@ -110,7 +117,7 @@ def serve(port: int = typer.Option(8501, help="Port for the dashboard")):
     app_path = REPO_ROOT / "app.py"
     if not app_path.exists():
         raise typer.BadParameter(f"{app_path} not found")
-    subprocess.run([sys.executable, "-m", "streamlit", "run", str(app_path), "--server.port", str(port)], check=True)
+    subprocess.run([sys.executable, "-m", "uvicorn", "app:app", "--host", "127.0.0.1", "--port", str(port)], check=True)
 
 
 if __name__ == "__main__":
