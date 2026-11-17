@@ -1,0 +1,37 @@
+# Every model name, path and threshold lives here. A model value may be a Hugging Face id
+# or a local folder path (for example a Kaggle Dataset you saved with save_pretrained).
+seed: 42
+device: auto            # auto = cuda if available, else cpu
+
+models:
+  nli: MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli
+  nli_fallback: cross-encoder/nli-deberta-v3-base
+  hhem: vectara/hallucination_evaluation_model
+  embedder: sentence-transformers/all-MiniLM-L6-v2
+  max_length: 512
+  batch_size: 16
+
+data:
+  demo_path: data/sample/demo.jsonl
+  # Folder that contains response.jsonl and source_info.jsonl. Check the real folder name
+  # after cloning RAGTruth (ls data/RAGTruth) and fix this path if needed.
+  ragtruth_dir: data/RAGTruth/dataset
+
+baseline:
+  tau: 0.5              # used when no tuned value is available
+
+claim_level:            # used from Phase 3 onward
+  chunk_tokens: 256
+  stride: 128
+  top_k: 3
+  tau_support: 0.5
+  tau_contra: 0.5
+  tau_answer: 0.5
+
+calibration:            # used from Phase 4 onward
+  alpha: 0.6            # abstain when max class probability is below this
+
+eval:
+  results_dir: results
+  max_examples: null    # null = use everything
+  bootstrap_samples: 1000

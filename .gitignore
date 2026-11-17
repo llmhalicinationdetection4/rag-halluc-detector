@@ -1,0 +1,15 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+data/RAGTruth/
+results/*
+!results/.gitkeep
+!results/phase1_summary.json
+!results/phase1_by_task.csv
+!results/phase1_metrics.csv
+!results/phase1_predictions.csv
+papers/
+.ipynb_checkpoints/

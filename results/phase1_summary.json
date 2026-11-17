@@ -1,0 +1,19 @@
+{
+  "dataset": "ragtruth",
+  "n_train": 15090,
+  "n_test": 2700,
+  "device": "cuda",
+  "seed": 42,
+  "nli_model": "MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli",
+  "hhem_status": "ok",
+  "thresholds": {
+    "nli_whole_context": {
+      "tuned_tau": 0.9901027381420135,
+      "train_f1_at_tuned_tau": 0.6287938510051242
+    },
+    "hhem": {
+      "tuned_tau": 0.8241772055625916,
+      "train_f1_at_tuned_tau": 0.7556291390728477
+    }
+  }
+}

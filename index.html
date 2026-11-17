@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Guardrail AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Global & Background */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top center, #111827 0%, #030712 100%);
+            background-attachment: fixed;
+            color: #e2e8f0;
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            width: 320px;
+            background-color: #0b0f19;
+            border-right: 1px solid #1f2937;
+            padding: 24px;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+        .sidebar h2, .sidebar h3 { color: #f8fafc; font-weight: 600; margin-top: 0; }
+        .sidebar hr { border-color: #1e293b; margin: 20px 0; border-bottom: none; }
+        
+        .radio-group label { display: block; margin-bottom: 12px; cursor: pointer; color: #cbd5e1; font-size: 15px; }
+        .radio-group input { margin-right: 8px; accent-color: #0ea5e9; }
+
+        .project-details {
+            background-color: #0f172a;
+            border: 1px solid #1e293b;
+            border-left: 4px solid #0ea5e9;
+            padding: 16px;
+            border-radius: 4px;
+            color: #cbd5e1;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex-grow: 1;
+            padding: 32px 48px;
+            box-sizing: border-box;
+            max-width: 1200px;
+        }
+
+        /* Headers */
+        .title-glow { color: #f8fafc; font-weight: 700; font-size: 2.4rem; letter-spacing: -0.5px; margin: 0 0 5px 0; }
+        .subtitle { color: #38bdf8; font-size: 1rem; font-weight: 500; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 25px; }
+        .main-content hr { border-color: #1e293b; margin: 24px 0; }
+
+        /* Two-Column Grid for Inputs */
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        .input-grid h4 { margin: 0 0 12px 0; font-weight: 500; font-size: 1.1rem; }
+
+        /* Secure Terminal Input Areas */
+        textarea {
+            width: 100%;
+            height: 220px;
+            background-color: #0f1523;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 16px;
+            font-size: 14px;
+            font-family: monospace;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+            transition: border 0.2s ease, box-shadow 0.2s ease;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        textarea:focus {
+            outline: none;
+            border: 1px solid #0ea5e9;
+            box-shadow: 0 0 8px rgba(14, 165, 233, 0.3);
+        }
+
+        /* Enterprise Verification Button */
+        button {
+            width: 100%;
+            background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+            color: white;
+            border: 1px solid #38bdf8;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            padding: 14px 24px;
+            box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(14, 165, 233, 0.4);
+            border: 1px solid #7dd3fc;
+        }
+        button:disabled { background: #334155; border-color: #1e293b; color: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        /* Results Area */
+        #results-container { display: none; margin-top: 30px; }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .metric { display: flex; flex-direction: column; }
+        .metric-label { color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .metric-value { color: #38bdf8; font-weight: 700; font-size: 2rem; margin-top: 4px; }
+
+        .alert {
+            padding: 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+        .alert-success { background-color: rgba(21, 128, 61, 0.2); border: 1px solid #22c55e; color: #4ade80; }
+        .alert-error { background-color: rgba(185, 28, 28, 0.2); border: 1px solid #ef4444; color: #f87171; }
+
+        .json-telemetry {
+            background: #0f1523;
+            padding: 16px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            font-family: monospace;
+            font-size: 13px;
+            color: #a78bfa;
+            white-space: pre-wrap;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <h2>⚙️ Control Panel</h2>
+        <div class="radio-group" id="scenario-selector">
+            <!-- Populated by JS -->
+        </div>
+
+        <hr>
+        
+        <h3>🎓 Project Details</h3>
+        <div class="project-details">
+            <strong>Team Members:</strong><br>
+            - Rachana Urs HR<br>
+            - [Team Member 2]<br>
+            - [Team Member 3]<br>
+            - [Team Member 4]<br><br>
+            <strong>Program:</strong><br> Master of Computer Applications (MCA)<br><br>
+            <strong>Component:</strong><br> AI Hallucination Detector
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <h1 class="title-glow">🛡️ Nova SLM Guardrail</h1>
+        <div class="subtitle">Enterprise Fact-Matching & Risk Engine</div>
+        <hr>
+
+        <div class="input-grid">
+            <div>
+                <h4>📄 Ground Truth (Secure Context)</h4>
+                <textarea id="context-input"></textarea>
+            </div>
+            <div>
+                <h4>🤖 Unverified AI Response</h4>
+                <textarea id="answer-input"></textarea>
+            </div>
+        </div>
+
+        <button id="scan-btn" onclick="executeScan()">🚀 Execute Guardrail Scan</button>
+
+        <!-- RESULTS SECTION -->
+        <div id="results-container">
+            <hr>
+            <h3>📊 Guardrail Analysis Report</h3>
+            
+            <div class="metrics-grid">
+                <div class="metric">
+                    <span class="metric-label">Confidence Score</span>
+                    <span class="metric-value" id="metric-score">0.0%</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Current Threshold</span>
+                    <span class="metric-value" id="metric-threshold">0.991</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Scan Latency</span>
+                    <span class="metric-value" id="metric-latency">0 ms</span>
+                </div>
+            </div>
+
+            <div id="verdict-alert" class="alert"></div>
+
+            <h4 style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px;">raw_backend_telemetry.json</h4>
+            <div class="json-telemetry" id="json-output"></div>
+        </div>
+    </div>
+
+    <script>
+        // Store scenarios exactly as you had them in Streamlit
+        const scenarios = {
+            "Custom (Paste your own)": { "context": "", "answer": "" },
+            "✅ Safe: University Rules": {
+                "context": "The Master of Computer Applications (MCA) program requires a final semester project for graduation. Students must submit their reports by the end of November.",
+                "answer": "A final semester project is required to graduate from the MCA program, and the report submission deadline is the end of November."
+            },
+            "✅ Safe: C++ OOP Principles": {
+                "context": "In C++, the Strategy pattern defines a family of algorithms, encapsulates each one, and makes them interchangeable at runtime without altering the client code.",
+                "answer": "The Strategy pattern in C++ allows interchangeable algorithms to be encapsulated and swapped during runtime."
+            },
+            "✅ Safe: Data Science Pipelines": {
+                "context": "Data normalization scales numerical variables into a standard range, usually 0 to 1, to prevent features with larger variance from dominating the machine learning model.",
+                "answer": "To stop features with high variance from dominating a model, data normalization is used to scale numerical variables between 0 and 1."
+            },
+            "✅ Safe: Pure Fact Matching": {
+                "context": "Python is an interpreted, high-level programming language created by Guido van Rossum.",
+                "answer": "Guido van Rossum designed Python, which executes code line-by-line rather than being compiled."
+            },
+            "🚨 Risk: Corporate HR Policy": {
+                "context": "Employees are entitled to 14 days of paid leave per year. Remote work is strictly prohibited on Mondays and Fridays.",
+                "answer": "Yes, you can work from home on Mondays as long as you inform your manager."
+            },
+            "🚨 Risk: C++ Memory Management": {
+                "context": "Dynamic memory allocated with the 'new' keyword in C++ must be manually deallocated using 'delete' to prevent memory leaks.",
+                "answer": "C++ automatically uses a garbage collector to delete memory allocated with 'new', so manual deallocation is not required."
+            },
+            "🚨 Risk: Tech Support Manual": {
+                "context": "To hard reset the server, hold the red power button for 10 seconds. Do not unplug the main power cable during this process.",
+                "answer": "To reset, immediately unplug the main power cable from the wall."
+            }
+        };
+
+        // Initialize Sidebar Radios
+        const selector = document.getElementById('scenario-selector');
+        const ctxInput = document.getElementById('context-input');
+        const ansInput = document.getElementById('answer-input');
+
+        let isFirst = true;
+        for (const [key, value] of Object.entries(scenarios)) {
+            const label = document.createElement('label');
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = 'scenario';
+            radio.value = key;
+            if (isFirst) {
+                radio.checked = true;
+                ctxInput.value = value.context;
+                ansInput.value = value.answer;
+                isFirst = false;
+            }
+            
+            radio.addEventListener('change', (e) => {
+                ctxInput.value = scenarios[e.target.value].context;
+                ansInput.value = scenarios[e.target.value].answer;
+                document.getElementById('results-container').style.display = 'none';
+            });
+
+            label.appendChild(radio);
+            label.appendChild(document.createTextNode(key));
+            selector.appendChild(label);
+        }
+
+        // FastAPI Fetch Logic
+        async function executeScan() {
+            const context = ctxInput.value.trim();
+            const answer = ansInput.value.trim();
+            const btn = document.getElementById('scan-btn');
+            const resultsDiv = document.getElementById('results-container');
+            
+            if (!context || !answer) {
+                alert("Please provide both context and answer.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "⏳ Authenticating facts...";
+            resultsDiv.style.display = 'none';
+
+            const startTime = performance.now();
+
+            try {
+                    const response = await fetch('/api/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ context, answer })
+                });
+                
+                const data = await response.json();
+                const latency = Math.round(performance.now() - startTime);
+                
+                // Update UI Metrics
+                document.getElementById('metric-score').innerText = (data.score * 100).toFixed(1) + '%';
+                document.getElementById('metric-threshold').innerText = data.threshold_used || '0.991';
+                document.getElementById('metric-latency').innerText = latency + ' ms';
+
+                // Update Alert Box
+                const alertBox = document.getElementById('verdict-alert');
+                if (data.is_hallucinated) {
+                    alertBox.className = 'alert alert-error';
+                    alertBox.innerHTML = '🚨 <strong>CRITICAL RISK:</strong> The AI hallucinated or contradicted the secure context.';
+                } else {
+                    alertBox.className = 'alert alert-success';
+                    alertBox.innerHTML = '✅ <strong>CLEARED:</strong> The response is fully grounded in the provided context.';
+                }
+
+                // Append Mock Telemetry for UI effect, matching your JSON expander
+                data.active_engine = "ClaimLevelVerifier (FastAPI)";
+                data.status = 200;
+                document.getElementById('json-output').innerText = JSON.stringify(data, null, 2);
+                
+                resultsDiv.style.display = 'block';
+            } catch (err) {
+                alert("🚨 SYSTEM FAULT: Failed to connect to FastAPI backend. Is uvicorn running?");
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "🚀 Execute Guardrail Scan";
+            }
+        }
+    </script>
+</body>
+</html>
