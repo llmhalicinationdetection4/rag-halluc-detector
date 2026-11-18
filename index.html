@@ -302,13 +302,12 @@
                     body: JSON.stringify({ context, answer })
                 });
                 
-                const data = await response.json();
-                const latency = Math.round(performance.now() - startTime);
-                
-                // Update UI Metrics
-                document.getElementById('metric-score').innerText = (data.score * 100).toFixed(1) + '%';
-                document.getElementById('metric-threshold').innerText = data.threshold_used || '0.991';
-                document.getElementById('metric-latency').innerText = latency + ' ms';
+                // ... existing fetch ...
+const data = await response.json();
+const verdict = data.primary_verdict;
+document.getElementById('score-display').innerText = `Score: ${verdict.score.toFixed(3)}`;
+document.getElementById('threshold-display').innerText = `Threshold: ${verdict.threshold_used.toFixed(3)}`;
+document.getElementById('engine-display').innerText = `Engine: ${verdict.engine}`;
 
                 // Update Alert Box
                 const alertBox = document.getElementById('verdict-alert');

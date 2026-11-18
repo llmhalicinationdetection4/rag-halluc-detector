@@ -3,61 +3,45 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
-
-# Attempt to import real service and models
-try:
-    from halludetect.service import Detector
-    from halludetect.verifiers.claim_level import ClaimLevelVerifier
-    MODELS_AVAILABLE = True
-except ImportError:
-    MODELS_AVAILABLE = False
+from pathlib import Path
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- Dynamically load thresholds (No hardcoding) ---
-def load_threshold(filepath, default_val):
+def load_threshold(filepath, engine, default_val):
     try:
         with open(filepath, "r") as f:
             data = json.load(f)
+            # Assuming phase1 structure based on Claude's notes
+            if engine == "hhem" and "thresholds" in data:
+                return data["thresholds"]["hhem"]["tuned_tau"]
             return data.get("best_threshold", default_val)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return default_val
-
-# Load Phase 1 (HHEM) and Phase 3 (Claim-Level) thresholds
-HHEM_THRESHOLD = load_threshold("results/phase1_summary.json", 0.824)
-CLAIM_THRESHOLD = load_threshold("results/phase3_summary.json", 0.785)
+    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        logger.error(f"Missing threshold file/key for {engine}. Failsafe prevented.")
+        return None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Modern startup/shutdown manager for FastAPI."""
-    logger.info("Initializing models...")
-    if MODELS_AVAILABLE:
-        try:
-            app.state.hhem_detector = Detector()
-            app.state.claim_verifier = ClaimLevelVerifier()
-            logger.info("Models loaded successfully.")
-        except Exception as e:
-            logger.error(f"Failed to load models: {e}")
-            app.state.hhem_detector = None
-            app.state.claim_verifier = None
-    else:
-        logger.warning("Model imports failed. Running in fallback mode.")
-        app.state.hhem_detector = None
-        app.state.claim_verifier = None
+    app.state.hhem_detector = None
+    app.state.claim_verifier = None
+    try:
+        from halludetect.service import Detector
+        from halludetect.verifiers.claim_level import ClaimLevelVerifier
+        app.state.hhem_detector = Detector()
+        app.state.claim_verifier = ClaimLevelVerifier()
+        app.state.hhem_tau = load_threshold("results/phase1_summary.json", "hhem", None)
+        app.state.claim_tau = load_threshold("results/phase3_summary.json", "claim", None)
+        if app.state.hhem_tau is None or app.state.claim_tau is None:
+            raise ValueError("Threshold files missing. Will not start with invented defaults.")
+        logger.info("Models and thresholds loaded successfully.")
+    except Exception as e:
+        logger.error(f"Initialization failed: {e}")
     yield
-    logger.info("Shutting down API...")
 
-app = FastAPI(
-    title="RAG Hallucination Detector API",
-    description="Backend API serving HHEM (Primary) and ClaimLevelVerifier (Experimental).",
-    version="1.0.0",
-    lifespan=lifespan
-)
+app = FastAPI(title="RAG Hallucination Detector API", lifespan=lifespan)
 
-# Strict CORS restriction
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost", "http://127.0.0.1"],
@@ -67,45 +51,30 @@ app.add_middleware(
 )
 
 class VerifyRequest(BaseModel):
-    context: str = Field(..., description="The reference source text retrieved for RAG.")
-    answer: str = Field(..., description="The generated model answer to verify.")
-    task: str = Field("qa", description="Evaluation task type.")
+    context: str = Field(..., description="The reference source text.")
+    answer: str = Field(..., description="The generated model answer.")
 
 @app.get("/")
 async def serve_ui():
-    """Serves the single UI dashboard."""
     return FileResponse("index.html")
+
+@app.get("/health")
+def health_check():
+    loaded = app.state.hhem_detector is not None
+    return {"status": "active" if loaded else "unavailable", "models_loaded": loaded}
 
 @app.post("/api/verify")
 def verify_response(request: VerifyRequest):
-    if not hasattr(app.state, "hhem_detector") or not app.state.hhem_detector:
-        # Graceful fallback for Pytest / TestClient to pass without loading heavy models
-        return {
-            "status": "success",
-            "primary_verdict": {
-                "engine": "HHEM",
-                "score": 0.85,
-                "threshold_used": HHEM_THRESHOLD,
-                "is_hallucinated": False
-            },
-            "experimental": {
-                "engine": "ClaimLevelVerifier",
-                "score": 0.90,
-                "threshold_used": CLAIM_THRESHOLD,
-                "is_hallucinated": True
-            }
-        }
+    if app.state.hhem_detector is None or app.state.claim_verifier is None:
+        return JSONResponse(status_code=503, content={"detail": "Models are currently unavailable."})
 
     try:
-        # 1. Primary Verdict (HHEM - Phase 1)
-        hhem_result = app.state.hhem_detector.predict(request.context, request.answer)
-        # Assuming HHEM predict returns a dictionary with 'score' or a raw float
-        hhem_score = float(hhem_result.get("score", 0.0)) if isinstance(hhem_result, dict) else float(hhem_result)
+        # Call verified HHEM pipeline
+        hhem_res = app.state.hhem_detector.verify(request.context, request.answer)
+        hhem_score = hhem_res["models"]["hhem"]["score"]
         
-        # 2. Experimental Verdict (Claim-Level - Phase 3)
-        claim_res = app.state.claim_verifier.verify(request.context, request.answer, task=request.task)
-        
-        # Aggregate the contradiction scores to a document-level score (Max Contradiction)
+        # Call claim-level verifier
+        claim_res = app.state.claim_verifier.verify(request.context, request.answer)
         p_contras = [c.get("p_contra", 0.0) for c in claim_res.get("claims", [])]
         claim_score = max(p_contras) if p_contras else 0.0
 
@@ -114,20 +83,16 @@ def verify_response(request: VerifyRequest):
             "primary_verdict": {
                 "engine": "HHEM",
                 "score": hhem_score,
-                "threshold_used": HHEM_THRESHOLD,
-                "is_hallucinated": hhem_score < HHEM_THRESHOLD # HHEM: lower score = hallucinated
+                "threshold_used": app.state.hhem_tau,
+                "is_hallucinated": hhem_score < app.state.hhem_tau
             },
             "experimental": {
                 "engine": "ClaimLevelVerifier",
                 "score": claim_score,
-                "threshold_used": CLAIM_THRESHOLD,
-                "is_hallucinated": claim_score >= CLAIM_THRESHOLD # Contradiction: higher score = hallucinated
+                "threshold_used": app.state.claim_tau,
+                "is_hallucinated": claim_score >= app.state.claim_tau
             }
         }
     except Exception as e:
         logger.error(f"Error during verification: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/health")
-def health_check():
-    return {"status": "active", "models_loaded": getattr(app.state, "hhem_detector", None) is not None}

@@ -97,6 +97,7 @@ def load_ragtruth(
             "label_types": [lab.get("label_type") for lab in labels if isinstance(lab, dict) and lab.get("label_type")],
             **extra,
         }
+        meta["label_spans"] = [[l["start"], l["end"]] for l in src.get("labels", []) if "start" in l and "end" in l]
         examples.append(
             Example(
                 id=str(rec.get("id", rec["source_id"])),
