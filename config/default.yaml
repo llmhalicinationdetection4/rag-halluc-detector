@@ -1,7 +1,7 @@
 # Every model name, path and threshold lives here. A model value may be a Hugging Face id
 # or a local folder path (for example a Kaggle Dataset you saved with save_pretrained).
 seed: 42
-device: auto            # auto = cuda if available, else cpu
+device: "cuda"            # auto = cuda if available, else cpu
 
 models:
   nli: MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli
