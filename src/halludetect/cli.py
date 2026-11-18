@@ -47,7 +47,9 @@ def eval_cmd(
     run_phase1(load_config(config), dataset=dataset, max_examples=max_examples, use_hhem=hhem)
 
 @app.command("phase3")
-def phase3_cmd(max_examples: Optional[int] = typer.Option(None, help="Cap examples")):
+def phase3_cmd(
+    max_examples: Optional[int] = typer.Option(None, "--max-examples", help="Cap examples")
+):
     """Run Phase 3 claim-level verifier training, evaluation, and CIs."""
     from halludetect.eval.run_phase3 import run_evaluation
     run_evaluation(max_examples)
