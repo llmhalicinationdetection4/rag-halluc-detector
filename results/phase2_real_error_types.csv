@@ -1,0 +1,63 @@
+model,task_type,group,n,flagged_rate,mean_score,kind
+nli_whole_context,ALL,faithful (quality=good),1732,0.824,0.773,false_positive_rate
+nli_whole_context,ALL,faithful (quality=incorrect_refusal),24,0.958,0.112,false_positive_rate
+nli_whole_context,ALL,faithful (quality=truncated),1,1.0,0.966,false_positive_rate
+nli_whole_context,ALL,faithful: ALL,1757,0.826,0.764,false_positive_rate
+nli_whole_context,ALL,hallucinated: ALL,943,0.918,0.694,recall
+nli_whole_context,ALL,hallucinated: Evident Baseless Info,542,0.924,0.686,recall
+nli_whole_context,ALL,hallucinated: Evident Conflict,459,0.9,0.717,recall
+nli_whole_context,ALL,hallucinated: Subtle Baseless Info,141,0.936,0.676,recall
+nli_whole_context,ALL,hallucinated: Subtle Conflict,15,0.8,0.762,recall
+nli_whole_context,Data2txt,faithful (quality=good),321,0.897,0.692,false_positive_rate
+nli_whole_context,Data2txt,faithful: ALL,321,0.897,0.692,false_positive_rate
+nli_whole_context,Data2txt,hallucinated: ALL,579,0.915,0.691,recall
+nli_whole_context,Data2txt,hallucinated: Evident Baseless Info,323,0.916,0.688,recall
+nli_whole_context,Data2txt,hallucinated: Evident Conflict,345,0.896,0.725,recall
+nli_whole_context,Data2txt,hallucinated: Subtle Baseless Info,85,0.929,0.638,recall
+nli_whole_context,Data2txt,hallucinated: Subtle Conflict,5,0.6,0.819,recall
+nli_whole_context,QA,faithful (quality=good),715,0.828,0.796,false_positive_rate
+nli_whole_context,QA,faithful (quality=incorrect_refusal),24,0.958,0.112,false_positive_rate
+nli_whole_context,QA,faithful (quality=truncated),1,1.0,0.966,false_positive_rate
+nli_whole_context,QA,faithful: ALL,740,0.832,0.774,false_positive_rate
+nli_whole_context,QA,hallucinated: ALL,160,0.925,0.739,recall
+nli_whole_context,QA,hallucinated: Evident Baseless Info,109,0.954,0.71,recall
+nli_whole_context,QA,hallucinated: Evident Conflict,26,0.846,0.887,recall
+nli_whole_context,QA,hallucinated: Subtle Baseless Info,40,0.925,0.705,recall
+nli_whole_context,Summary,faithful (quality=good),696,0.786,0.786,false_positive_rate
+nli_whole_context,Summary,faithful: ALL,696,0.786,0.786,false_positive_rate
+nli_whole_context,Summary,hallucinated: ALL,204,0.922,0.665,recall
+nli_whole_context,Summary,hallucinated: Evident Baseless Info,110,0.918,0.655,recall
+nli_whole_context,Summary,hallucinated: Evident Conflict,88,0.932,0.638,recall
+nli_whole_context,Summary,hallucinated: Subtle Baseless Info,16,1.0,0.81,recall
+nli_whole_context,Summary,hallucinated: Subtle Conflict,10,0.9,0.733,recall
+hhem,ALL,faithful (quality=good),1732,0.307,0.822,false_positive_rate
+hhem,ALL,faithful (quality=incorrect_refusal),24,0.0,0.979,false_positive_rate
+hhem,ALL,faithful (quality=truncated),1,0.0,0.934,false_positive_rate
+hhem,ALL,faithful: ALL,1757,0.303,0.824,false_positive_rate
+hhem,ALL,hallucinated: ALL,943,0.845,0.515,recall
+hhem,ALL,hallucinated: Evident Baseless Info,542,0.895,0.462,recall
+hhem,ALL,hallucinated: Evident Conflict,459,0.828,0.553,recall
+hhem,ALL,hallucinated: Subtle Baseless Info,141,0.901,0.445,recall
+hhem,ALL,hallucinated: Subtle Conflict,15,0.667,0.618,recall
+hhem,Data2txt,faithful (quality=good),321,0.863,0.574,false_positive_rate
+hhem,Data2txt,faithful: ALL,321,0.863,0.574,false_positive_rate
+hhem,Data2txt,hallucinated: ALL,579,0.967,0.476,recall
+hhem,Data2txt,hallucinated: Evident Baseless Info,323,0.981,0.445,recall
+hhem,Data2txt,hallucinated: Evident Conflict,345,0.965,0.485,recall
+hhem,Data2txt,hallucinated: Subtle Baseless Info,85,0.965,0.462,recall
+hhem,Data2txt,hallucinated: Subtle Conflict,5,1.0,0.396,recall
+hhem,QA,faithful (quality=good),715,0.193,0.876,false_positive_rate
+hhem,QA,faithful (quality=incorrect_refusal),24,0.0,0.979,false_positive_rate
+hhem,QA,faithful (quality=truncated),1,0.0,0.934,false_positive_rate
+hhem,QA,faithful: ALL,740,0.186,0.88,false_positive_rate
+hhem,QA,hallucinated: ALL,160,0.738,0.504,recall
+hhem,QA,hallucinated: Evident Baseless Info,109,0.853,0.427,recall
+hhem,QA,hallucinated: Evident Conflict,26,0.231,0.785,recall
+hhem,QA,hallucinated: Subtle Baseless Info,40,0.825,0.413,recall
+hhem,Summary,faithful (quality=good),696,0.168,0.881,false_positive_rate
+hhem,Summary,faithful: ALL,696,0.168,0.881,false_positive_rate
+hhem,Summary,hallucinated: ALL,204,0.583,0.637,recall
+hhem,Summary,hallucinated: Evident Baseless Info,110,0.682,0.546,recall
+hhem,Summary,hallucinated: Evident Conflict,88,0.466,0.749,recall
+hhem,Summary,hallucinated: Subtle Baseless Info,16,0.75,0.437,recall
+hhem,Summary,hallucinated: Subtle Conflict,10,0.5,0.729,recall

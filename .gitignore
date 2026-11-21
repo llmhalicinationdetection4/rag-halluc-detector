@@ -7,14 +7,11 @@ __pycache__/
 data/RAGTruth/
 results/*
 !results/.gitkeep
-!results/phase1_summary.json
-!results/phase1_by_task.csv
-!results/phase1_metrics.csv
-!results/phase1_predictions.csv
+!results/*.csv
+!results/*.json
 papers/
 .ipynb_checkpoints/
 # Archives
 *.tar
 *.zip
 *.tar.gz
-results/cache/phase3_predictions.jsonl

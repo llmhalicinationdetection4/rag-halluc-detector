@@ -142,6 +142,15 @@
             white-space: pre-wrap;
             margin-top: 10px;
         }
+
+        .note { color: #94a3b8; font-size: 0.9rem; margin: 6px 0 14px 0; }
+        .alert-warn { background-color: rgba(161, 98, 7, 0.2); border: 1px solid #eab308; color: #facc15; }
+        .exp-box { border: 1px dashed #475569; border-radius: 8px; padding: 14px; margin: 18px 0; background: rgba(15, 23, 42, 0.6); }
+        .exp-box h4 { margin: 0 0 6px 0; color: #c4b5fd; }
+        table.claims { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+        table.claims th, table.claims td { border-bottom: 1px solid #1f2937; padding: 6px 8px; text-align: left; vertical-align: top; }
+        table.claims th { color: #94a3b8; font-weight: 500; }
+        .flag-yes { color: #f87171; font-weight: 600; } .flag-no { color: #4ade80; }
     </style>
 </head>
 <body>
@@ -190,15 +199,15 @@
         <div id="results-container">
             <hr>
             <h3>📊 Guardrail Analysis Report</h3>
-            
+
             <div class="metrics-grid">
                 <div class="metric">
-                    <span class="metric-label">Confidence Score</span>
+                    <span class="metric-label" id="label-score">Consistency Score</span>
                     <span class="metric-value" id="metric-score">0.0%</span>
                 </div>
                 <div class="metric">
-                    <span class="metric-label">Current Threshold</span>
-                    <span class="metric-value" id="metric-threshold">0.991</span>
+                    <span class="metric-label">Threshold τ</span>
+                    <span class="metric-value" id="metric-threshold">-</span>
                 </div>
                 <div class="metric">
                     <span class="metric-label">Scan Latency</span>
@@ -207,6 +216,9 @@
             </div>
 
             <div id="verdict-alert" class="alert"></div>
+            <div class="note" id="engine-line"></div>
+            <div id="warnings"></div>
+            <div id="experimental-box"></div>
 
             <h4 style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 5px;">raw_backend_telemetry.json</h4>
             <div class="json-telemetry" id="json-output"></div>
@@ -278,12 +290,61 @@
         }
 
         // FastAPI Fetch Logic
+        function el(tag, text, className) {
+            const node = document.createElement(tag);
+            if (text !== undefined && text !== null) node.textContent = text;
+            if (className) node.className = className;
+            return node;
+        }
+
+        function showFault(message) {
+            const alertBox = document.getElementById('verdict-alert');
+            alertBox.className = 'alert alert-error';
+            alertBox.textContent = '🚨 SYSTEM FAULT: ' + message;
+            for (const id of ['engine-line', 'warnings', 'experimental-box', 'json-output']) {
+                document.getElementById(id).replaceChildren();
+            }
+            document.getElementById('results-container').style.display = 'block';
+        }
+
+        function renderExperimental(exp) {
+            const box = document.getElementById('experimental-box');
+            box.replaceChildren();
+            const wrap = el('div', null, 'exp-box');
+            wrap.appendChild(el('h4', '🧪 ' + exp.engine));
+            if (!exp.available) {
+                wrap.appendChild(el('div', exp.reason || 'Not available.', 'note'));
+                box.appendChild(wrap);
+                return;
+            }
+            const verdict = exp.is_hallucinated ? 'flags this answer as hallucinated' : 'finds this answer supported';
+            wrap.appendChild(el('div', `Aggregation ${exp.aggregation}: score ${exp.score.toFixed(3)} against threshold ${exp.threshold_used.toFixed(3)} (flagged when the score is at or above the threshold). It ${verdict}. Not yet validated as the main detector.`, 'note'));
+            if (exp.probability_hallucinated !== undefined) {
+                const unsure = exp.uncertain ? ' (uncertain: too close to 50%)' : '';
+                wrap.appendChild(el('div', `Calibrated probability of hallucination: ${(exp.probability_hallucinated * 100).toFixed(1)}%${unsure}`, 'note'));
+            }
+            const table = el('table', null, 'claims');
+            const head = el('tr');
+            for (const name of ['Claim', 'Support', 'Contradiction', 'Verdict']) head.appendChild(el('th', name));
+            table.appendChild(head);
+            for (const c of exp.claims) {
+                const row = el('tr');
+                row.appendChild(el('td', c.text));
+                row.appendChild(el('td', (c.support * 100).toFixed(1) + '%'));
+                row.appendChild(el('td', (c.contradiction * 100).toFixed(1) + '%'));
+                row.appendChild(el('td', c.flagged === null ? '-' : (c.flagged ? 'unsupported' : 'supported'), c.flagged ? 'flag-yes' : 'flag-no'));
+                table.appendChild(row);
+            }
+            wrap.appendChild(table);
+            box.appendChild(wrap);
+        }
+
         async function executeScan() {
             const context = ctxInput.value.trim();
             const answer = ansInput.value.trim();
             const btn = document.getElementById('scan-btn');
             const resultsDiv = document.getElementById('results-container');
-            
+
             if (!context || !answer) {
                 alert("Please provide both context and answer.");
                 return;
@@ -293,40 +354,47 @@
             btn.innerText = "⏳ Authenticating facts...";
             resultsDiv.style.display = 'none';
 
-            const startTime = performance.now();
-
             try {
-                    const response = await fetch('/api/verify', {
+                const response = await fetch('/api/verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ context, answer })
                 });
-                
-                // ... existing fetch ...
-const data = await response.json();
-const verdict = data.primary_verdict;
-document.getElementById('score-display').innerText = `Score: ${verdict.score.toFixed(3)}`;
-document.getElementById('threshold-display').innerText = `Threshold: ${verdict.threshold_used.toFixed(3)}`;
-document.getElementById('engine-display').innerText = `Engine: ${verdict.engine}`;
+                const data = await response.json();
+                if (!response.ok) {
+                    showFault(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+                    return;
+                }
+                const verdict = data.primary_verdict;
+                document.getElementById('label-score').textContent = 'Consistency Score (' + verdict.engine + ')';
+                document.getElementById('metric-score').textContent = (verdict.score * 100).toFixed(1) + '%';
+                document.getElementById('metric-threshold').textContent = verdict.threshold_used.toFixed(3);
+                document.getElementById('metric-latency').textContent = Math.round(data.latency_ms) + ' ms';
+                document.getElementById('engine-line').textContent =
+                    `Verdict from ${verdict.engine}: score ${verdict.score.toFixed(3)} against threshold τ = ${verdict.threshold_used.toFixed(3)} (flagged when the score is below τ). Threshold source: ${verdict.threshold_source}.`;
 
-                // Update Alert Box
                 const alertBox = document.getElementById('verdict-alert');
-                if (data.is_hallucinated) {
+                if (verdict.is_hallucinated) {
                     alertBox.className = 'alert alert-error';
-                    alertBox.innerHTML = '🚨 <strong>CRITICAL RISK:</strong> The AI hallucinated or contradicted the secure context.';
+                    alertBox.textContent = '🚨 CRITICAL RISK: The AI hallucinated or contradicted the secure context.';
                 } else {
                     alertBox.className = 'alert alert-success';
-                    alertBox.innerHTML = '✅ <strong>CLEARED:</strong> The response is fully grounded in the provided context.';
+                    alertBox.textContent = '✅ CLEARED: The response is consistent with the provided context.';
                 }
 
-                // Append Mock Telemetry for UI effect, matching your JSON expander
-                data.active_engine = "ClaimLevelVerifier (FastAPI)";
-                data.status = 200;
-                document.getElementById('json-output').innerText = JSON.stringify(data, null, 2);
-                
+                const warnings = document.getElementById('warnings');
+                warnings.replaceChildren();
+                const notes = [...data.warnings];
+                if (data.engines_agree === false) {
+                    notes.push('The two engines disagree. Treat this result as less certain and check the context yourself.');
+                }
+                for (const text of notes) warnings.appendChild(el('div', 'ℹ️ ' + text, 'alert alert-warn'));
+
+                renderExperimental(data.experimental);
+                document.getElementById('json-output').textContent = JSON.stringify(data, null, 2);
                 resultsDiv.style.display = 'block';
             } catch (err) {
-                alert("🚨 SYSTEM FAULT: Failed to connect to FastAPI backend. Is uvicorn running?");
+                showFault('Could not reach the backend (' + err.message + '). Is the server running?');
                 console.error(err);
             } finally {
                 btn.disabled = false;

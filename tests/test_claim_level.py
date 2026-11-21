@@ -1,58 +1,104 @@
 import pytest
-from unittest.mock import MagicMock
-import torch
-from halludetect.verifiers.claim_level import ClaimLevelVerifier
 
-@pytest.fixture
-def mock_verifier(monkeypatch):
-    # Mock Spacy to prevent downloading language models during tests
-    mock_nlp = MagicMock()
-    mock_doc = MagicMock()
-    mock_sent = MagicMock()
-    mock_sent.text = "This is a valid claim."
-    mock_doc.sents = [mock_sent]
-    mock_nlp.return_value = mock_doc
-    monkeypatch.setattr("spacy.load", lambda *a, **k: mock_nlp)
-    
-    # Mock Retriever (MiniLM)
-    mock_retriever = MagicMock()
-    mock_retriever.encode.return_value = torch.rand((1, 384))
-    monkeypatch.setattr("halludetect.verifiers.claim_level.SentenceTransformer", lambda *a, **k: mock_retriever)
-    
-    # Mock Tokenizer & NLI Model (DeBERTa)
-    mock_tokenizer = MagicMock()
-    mock_tokenizer.tokenize.return_value = ["This", "is", "a", "test", "context"]
-    mock_tokenizer.convert_tokens_to_string.return_value = "This is a test context"
-    mock_tokenizer.return_value = MagicMock(to=lambda d: MagicMock())
-    
-    mock_nli = MagicMock()
-    mock_nli.to.return_value = mock_nli
-    mock_nli.config.label2id = {"entailment": 0}
-    
-    class DummyOutput:
-        logits = torch.tensor([[2.0, -1.0, -1.0]]) # Simulates high entailment
-    mock_nli.return_value = DummyOutput()
-    
-    monkeypatch.setattr("halludetect.verifiers.claim_level.AutoTokenizer.from_pretrained", lambda *a, **k: mock_tokenizer)
-    monkeypatch.setattr("halludetect.verifiers.claim_level.AutoModelForSequenceClassification.from_pretrained", lambda *a, **k: mock_nli)
-    
-    return ClaimLevelVerifier(device="cpu")
+from halludetect.verifiers.claim_level import (
+    AGGREGATIONS,
+    ClaimLevelVerifier,
+    aggregate_scores,
+    chunk_context,
+    hallucination_score,
+    linearize_context,
+    split_claims,
+)
+from tests.fakes import FakeEmbedder, FakeNLI
 
-def test_process_data2txt_formats_json_to_sentences(mock_verifier):
-    res = mock_verifier._process_data2txt('{"name": "Nova", "type": "AI"}')
-    assert res == "name: Nova. type: AI."
-    # Should safely return original text if not JSON
-    assert mock_verifier._process_data2txt("Plain text context") == "Plain text context"
+CTX = "Paris is the capital of France. Berlin is the capital of Germany. Rome is the capital of Italy."
 
-def test_split_claims_skips_lead_in(mock_verifier):
-    res = mock_verifier._split_claims("Here is a summary:\nThis is a valid claim.")
-    assert len(res) == 1
-    assert res[0] == "This is a valid claim."
 
-def test_verify_returns_expected_schema_and_scores(mock_verifier):
-    res = mock_verifier.verify("Context string", "Answer string")
-    assert "score" in res
-    assert "hallucinated" in res
-    assert "claims" in res
-    assert len(res["claims"]) == 1
-    assert res["claims"][0]["score"] > 0.8  # Based on our mocked high entailment
+def _verifier(**kw):
+    kw.setdefault("chunk_size", 8)
+    kw.setdefault("stride", 4)
+    return ClaimLevelVerifier(nli=FakeNLI(), embedder=FakeEmbedder(), nlp=None, **kw)
+
+
+def test_split_claims_offsets_point_into_the_original_answer():
+    answers = ["Paris is big. Berlin is big too! Is Rome big?", "Rating is 3.5 stars. It is good.",
+               "First line here.\nSecond line here.", "Here is a summary in 80 words: The cafe is open. It is nice."]
+    for answer in answers:
+        claims = split_claims(answer)
+        assert claims
+        for c in claims:
+            assert answer[c["start"]:c["end"]] == c["text"]
+
+
+def test_split_claims_skips_lead_ins_and_keeps_decimals_together():
+    claims = split_claims("Here is a summary of the article in 81 words:\nThe boys are in a coma.\nRating is 3.5 stars.")
+    assert [c["text"] for c in claims] == ["The boys are in a coma.", "Rating is 3.5 stars."]
+    same_line = split_claims("Here is a summary: The cafe is open today.")
+    assert [c["text"] for c in same_line] == ["The cafe is open today."]
+
+
+def test_chunk_context_windows_overlap():
+    chunks = chunk_context(" ".join(f"w{i}" for i in range(10)), None, chunk_size=4, stride=2)
+    assert chunks == ["w0 w1 w2 w3", "w2 w3 w4 w5", "w4 w5 w6 w7", "w6 w7 w8 w9"]
+    assert chunk_context("", None) == [] and chunk_context("a b c", None, 256, 128) == ["a b c"]
+
+
+def test_linearize_turns_json_into_sentences():
+    text = linearize_context('{"name": "Subway", "hours": {"Monday": "9:0-22:30"}, "review_info": [{"review_text": "Nice."}]}')
+    assert "name: Subway." in text and "hours Monday: 9:0-22:30." in text and "review info 1 review text: Nice." in text
+    assert linearize_context("plain text") == "plain text" and linearize_context("{broken") == "{broken"
+
+
+def test_supported_and_unsupported_claims_are_scored_differently():
+    out = _verifier().verify(CTX, "Paris is the capital of France. Tokyo is the capital of Mars.")
+    first, second = out["claims"]
+    assert first["p_entail"] > 0.8 and second["p_entail"] < 0.5
+    assert "Paris" in first["evidence"]                       # retrieval picked the chunk about Paris
+    assert out["aggs"]["min_entail"] < 0.5 and out["aggs"]["share_unsupported"] == 0.5
+    assert out["n_chunks"] > 3
+
+
+def test_contradiction_is_reported():
+    out = _verifier().verify(CTX, "Paris is not the capital of France.")
+    assert out["claims"][0]["p_contra"] > 0.5 and out["aggs"]["max_contra"] > 0.5
+
+
+def test_no_context_means_nothing_is_supported():
+    out = _verifier().verify("", "Paris is big.")
+    assert out["claims"][0]["p_entail"] == 0.0 and out["n_chunks"] == 0
+
+
+def test_json_context_is_linearized_for_data2txt():
+    out = _verifier(chunk_size=50, stride=25).verify('{"city": "Paris"}', "city: Paris.", task="Data2txt")
+    assert out["claims"][0]["p_entail"] > 0.8
+
+
+def test_with_options_shares_models_and_changes_settings():
+    base = _verifier()
+    other = base.with_options(top_k=1, use_retrieval=False)
+    assert other._nli is base._nli and other.top_k == 1 and base.top_k == 3
+    assert other.signature() != base.signature()
+    with pytest.raises(AttributeError):
+        base.with_options(not_an_option=1)
+
+
+def test_split_answer_off_scores_the_whole_answer_as_one_claim():
+    out = _verifier(split_answer=False).verify(CTX, "Paris is the capital of France. Tokyo is the capital of Mars.")
+    assert len(out["claims"]) == 1
+
+
+def test_hallucination_score_orientation():
+    aggs = aggregate_scores([{"p_entail": 0.9, "p_contra": 0.1}, {"p_entail": 0.2, "p_contra": 0.7}])
+    assert hallucination_score(aggs, "max_contra") == 0.7
+    assert abs(hallucination_score(aggs, "min_entail") - 0.8) < 1e-9
+    assert abs(hallucination_score(aggs, "mean_entail") - 0.45) < 1e-9
+    assert hallucination_score(aggs, "share_unsupported") == 0.5
+    with pytest.raises(ValueError):
+        hallucination_score(aggs, "nope")
+    assert set(AGGREGATIONS) == set(aggs)
+
+
+def test_signature_names_the_nli_model_even_before_it_is_loaded():
+    unloaded = ClaimLevelVerifier(nlp=None)
+    assert unloaded.signature()["nli"] and unloaded.signature()["nli"] != "nli"
+    assert _verifier().signature()["nli"] == "fake-nli"

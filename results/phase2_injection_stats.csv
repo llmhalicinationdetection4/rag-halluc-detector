@@ -1,0 +1,16 @@
+task_type,error_type,n_faithful,n_tried,n_made,applicable_rate
+Data2txt,number_swap,321,230,200,0.87
+Data2txt,entity_swap,321,216,200,0.926
+Data2txt,negation_flip,321,200,200,1.0
+Data2txt,date_change,321,321,7,0.022
+Data2txt,unsupported_addition,321,200,200,1.0
+QA,number_swap,715,661,200,0.303
+QA,entity_swap,715,715,186,0.26
+QA,negation_flip,715,240,200,0.833
+QA,date_change,715,715,19,0.027
+QA,unsupported_addition,715,200,200,1.0
+Summary,number_swap,696,360,200,0.556
+Summary,entity_swap,696,217,200,0.922
+Summary,negation_flip,696,210,200,0.952
+Summary,date_change,696,652,200,0.307
+Summary,unsupported_addition,696,200,200,1.0

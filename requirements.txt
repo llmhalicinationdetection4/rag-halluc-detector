@@ -1,25 +1,16 @@
-# Pinned for Python 3.10/3.11. If pip reports a conflict (for example with Kaggle's
-# preinstalled packages), loosen the specific pin and note the change in your report.
-# torch is NOT pinned: Kaggle and Colab already ship it. For a local CPU install see pytorch.org.
-numpy==1.26.4
-pandas==2.2.2
-scikit-learn==1.5.1
-matplotlib==3.9.1
-pyyaml==6.0.1
-tqdm==4.66.4
-transformers==4.44.2
-sentence-transformers==3.0.1
-spacy==3.7.5
-typer==0.12.3
-pytest==8.2.2
+# Everything needed to run the evaluations (Kaggle/Colab) and the tests. Unpinned so it installs on Python 3.12/3.13;
+# after your final run, `pip freeze > requirements-lock.txt` records the exact versions you used for the report.
+numpy
+pandas
+scikit-learn
+tqdm
+pyyaml
+typer
+torch
+transformers
+sentence-transformers
+spacy
 fastapi
 uvicorn
-fastapi>=0.100.0
-uvicorn>=0.22.0
-httpx>=0.24.1
-pytest>=7.3.1
-scikit-learn>=1.2.2
-pandas>=2.0.0
-numpy>=1.24.0
-scipy>=1.10.1
-tqdm>=4.65.0
+httpx
+pytest

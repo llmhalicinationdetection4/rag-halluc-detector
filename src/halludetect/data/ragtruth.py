@@ -97,7 +97,9 @@ def load_ragtruth(
             "label_types": [lab.get("label_type") for lab in labels if isinstance(lab, dict) and lab.get("label_type")],
             **extra,
         }
-        meta["label_spans"] = [[l["start"], l["end"]] for l in src.get("labels", []) if "start" in l and "end" in l]
+        # Character offsets of the annotated hallucination spans in the RESPONSE text (labels live on the response record).
+        meta["label_spans"] = [[lab["start"], lab["end"]] for lab in labels
+                               if isinstance(lab, dict) and "start" in lab and "end" in lab]
         examples.append(
             Example(
                 id=str(rec.get("id", rec["source_id"])),

@@ -1,25 +1,14 @@
-from halludetect.eval.span_mapping import map_spans_to_claims
+from halludetect.eval.span_mapping import label_claims
 
-def test_map_spans_to_claims_exact_match():
-    text = "The sky is blue. Grass is red."
-    claims = ["The sky is blue.", "Grass is red."]
-    spans = [[17, 30]] # Character span for "Grass is red."
-    
-    labels = map_spans_to_claims(text, claims, spans)
-    assert labels == [False, True]
+CLAIMS = [{"start": 0, "end": 16}, {"start": 17, "end": 30}]
 
-def test_map_spans_to_claims_partial_overlap():
-    text = "The sky is blue. Grass is red."
-    claims = ["The sky is blue.", "Grass is red."]
-    spans = [[15, 20]] # Overlaps the period and "Gr"
-    
-    labels = map_spans_to_claims(text, claims, spans)
-    assert labels == [True, True]
 
-def test_map_spans_to_claims_no_hallucinations():
-    text = "Everything is perfect here."
-    claims = ["Everything is perfect here."]
-    spans = []
-    
-    labels = map_spans_to_claims(text, claims, spans)
-    assert labels == [False]
+def test_overlap_marks_the_right_claims():
+    assert label_claims(CLAIMS, [[17, 30]]) == [0, 1]
+    assert label_claims(CLAIMS, [[10, 20]]) == [1, 1]      # a span can touch two claims
+    assert label_claims(CLAIMS, []) == [0, 0]
+
+
+def test_touching_ends_do_not_count_as_overlap():
+    assert label_claims(CLAIMS, [[16, 17]]) == [0, 0]      # [16, 17) lies between the claims
+    assert label_claims(CLAIMS, [[30, 40]]) == [0, 0]

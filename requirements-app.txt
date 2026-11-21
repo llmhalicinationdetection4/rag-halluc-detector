@@ -1,6 +1,9 @@
-streamlit
+# Dashboard only (python -m halludetect serve). spaCy is optional: without it a regex sentence splitter is used.
+fastapi
+uvicorn
 torch
 transformers
+sentence-transformers
 numpy
 pandas
 scikit-learn

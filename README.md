@@ -8,37 +8,44 @@ the tool scores factual consistency and flags answers that are unsupported or co
 |---|---|---|
 | 0 | Config, data loaders (demo + RAGTruth), schema | done |
 | 1 | Whole-context NLI baseline, HHEM wrapper, full RAGTruth evaluation | done (results below) |
-| 2 | Injected-error test set and failure analysis (`inject`, `analyze`) | code built and unit-tested; run on RAGTruth pending |
-| 3 | Claim-level verifier | not built |
-| 4 | Calibration, abstention, final evaluation, latency | not built |
-| 5 | Streamlit dashboard (`app.py`) | built on the Phase 1 backend; claim-level view arrives with Phase 3 |
+| 2 | Injected-error test set and failure analysis (`inject`, `analyze`) | code done; run on RAGTruth pending |
+| 3 | Claim-level verifier, tuned on train, evaluated per task, ablations (`phase3`, `ablate`) | code done; run on RAGTruth pending |
+| 4 | Calibration (ECE), abstention, latency (`phase4`) | code done; run on RAGTruth pending |
+| 5 | Dashboard: FastAPI (`app.py`) + `index.html` | done; HHEM gives the verdict, the claim-level verifier is shown as experimental |
+
+Results for Phases 2 to 4 are added below only after they have been run; nothing in this README is a placeholder number.
 
 ## Setup
-Heavy evaluation runs are meant for Kaggle (see `notebooks/run_on_kaggle.ipynb`). Python 3.12 or 3.13.
+Heavy runs are meant for Kaggle (`notebooks/run_on_kaggle.ipynb`). Python 3.12 or 3.13.
 ```
 python -m venv .venv
 # Windows: .venv\Scripts\activate      Linux/macOS: source .venv/bin/activate
-pip install numpy pandas scikit-learn pyyaml tqdm typer pytest   # enough to run the tests
+pip install numpy pandas scikit-learn pyyaml tqdm typer pytest   # enough for most tests
 pip install -e .
 pytest
 ```
-Dashboard (also needs the two verification models, about 1.2 GB downloaded on the first scan):
+Dashboard (needs the verification models, about 1.5 GB downloaded on the first scan):
 ```
 pip install -r requirements-app.txt
-python -m halludetect serve            # opens http://localhost:8501
+python -m halludetect serve            # opens http://127.0.0.1:8000
 ```
-`requirements.txt` holds the exact pins used for the Kaggle runs; `python -m spacy download en_core_web_sm` is only needed for `inject`.
+`python -m spacy download en_core_web_sm` is needed for `inject` and improves sentence splitting; without it the claim-level
+verifier falls back to a regex splitter.
 
-## Usage
+## Pipeline (in this order, on a GPU)
 ```
-python -m halludetect verify --context "The meeting is on Monday at 10 am." --answer "The meeting is on Tuesday."
-python -m halludetect eval --dataset demo            # 20 handwritten examples, no downloads
-python -m halludetect inspect-ragtruth               # check the RAGTruth keys
-python -m halludetect eval --dataset ragtruth        # full run (Kaggle GPU: about 40 minutes), cached in results/cache
-python -m halludetect inject                         # Phase 2: build the injected-error test set (needs spaCy)
-python -m halludetect analyze                        # Phase 2: score it and break down real errors by type
+python -m halludetect eval --dataset ragtruth   # Phase 1: baselines, thresholds tuned on train, ~40 min
+python -m halludetect inject                    # Phase 2: injected-error test set (needs spaCy)
+python -m halludetect analyze                   # Phase 2: scores it with both verifiers, error-type breakdown
+python -m halludetect phase3                    # Phase 3: claim-level verifier (train subset + full test), resumable
+python -m halludetect ablate                    # Phase 3: ablations on a fixed test subset
+python -m halludetect phase4                    # Phase 4: calibration, abstention, latency
+python -m halludetect serve                     # Phase 5: dashboard
 ```
-Outputs go to `results/`. Models in `config/default.yaml` can be Hugging Face ids or local folders.
+Other commands: `verify` (one pair, JSON), `eval --dataset demo` (20 handwritten examples, no downloads), `inspect-ragtruth`.
+Each step writes its tables to `results/` (CSV/JSON are tracked in git, `results/cache` is not) and caches model scores, so an
+interrupted run resumes. Protocol everywhere: thresholds, aggregation and calibration are fitted on the train split; only the
+test split is reported.
 
 ## Data
 RAGTruth: `git clone --depth 1 https://github.com/ParticleMedia/RAGTruth.git data/RAGTruth`, then check the folder that holds
