@@ -1,0 +1,15 @@
+{
+  "feature_names": [
+    "h_max_contra",
+    "h_min_entail",
+    "h_mean_entail",
+    "h_share_unsupported"
+  ],
+  "coef": [
+    0.24366777458001282,
+    2.0380032279078093,
+    0.23512164946762013,
+    0.020869762006424132
+  ],
+  "intercept": -2.0852400893361973
+}

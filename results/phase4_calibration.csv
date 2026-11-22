@@ -1,0 +1,5 @@
+model,task,n,auc,brier,ece,abstain_margin
+claim_level,POOLED,2700,0.725,0.2006,0.0651,
+claim_level,Data2txt,900,0.639,0.2341,0.1114,
+claim_level,QA,900,0.6197,0.1996,0.2134,
+claim_level,Summary,900,0.7106,0.168,0.0933,

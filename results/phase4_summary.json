@@ -1,0 +1,13 @@
+{
+  "abstain_margin": null,
+  "target_accuracy": 0.8,
+  "features": [
+    "h_max_contra",
+    "h_min_entail",
+    "h_mean_entail",
+    "h_share_unsupported"
+  ],
+  "hhem_abstain_margin": null,
+  "hhem_note": "HHEM calibration skipped: Phase 1 train scores not found in results/cache (run `eval --dataset ragtruth`)",
+  "note": "calibrator and margin fitted on TRAIN only; metrics are from the TEST split"
+}

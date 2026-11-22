@@ -1,1 +1,25 @@
-{"best_aggregation": "min_entail", "best_threshold": 0.21}
+{
+  "best_aggregation": "min_entail",
+  "best_threshold": 0.6636149549394622,
+  "train_f1_at_threshold": 0.6664839682104686,
+  "train_auc_by_aggregation": {
+    "max_contra": 0.5932,
+    "min_entail": 0.6826,
+    "mean_entail": 0.6642,
+    "share_unsupported": 0.6544
+  },
+  "claim_threshold": 0.6447679927773344,
+  "n_train": 3000,
+  "n_test": 2700,
+  "seed": 42,
+  "verifier": {
+    "chunk_size": 256,
+    "stride": 128,
+    "top_k": 3,
+    "use_retrieval": true,
+    "split_answer": true,
+    "nli": "MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli",
+    "embedder": "sentence-transformers/all-MiniLM-L6-v2"
+  },
+  "note": "aggregation and thresholds were tuned on a seeded random subset of the train split only"
+}

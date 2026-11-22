@@ -1,0 +1,4 @@
+engine,device,n,p50_ms,p95_ms,mean_ms
+hhem,cuda,100,68.4,217.9,85.8
+nli_whole_context,cuda,100,23.6,30.1,27.6
+claim_level,cuda,100,136.9,277.3,154.0
