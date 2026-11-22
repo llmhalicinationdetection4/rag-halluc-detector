@@ -321,7 +321,7 @@
             wrap.appendChild(el('div', `Aggregation ${exp.aggregation}: score ${exp.score.toFixed(3)} against threshold ${exp.threshold_used.toFixed(3)} (flagged when the score is at or above the threshold). It ${verdict}. Not yet validated as the main detector.`, 'note'));
             if (exp.probability_hallucinated !== undefined) {
                 const unsure = exp.uncertain ? ' (uncertain: too close to 50%)' : '';
-                wrap.appendChild(el('div', `Calibrated probability of hallucination: ${(exp.probability_hallucinated * 100).toFixed(1)}%${unsure}`, 'note'));
+                wrap.appendChild(el('div', `Estimated probability of hallucination: ${(exp.probability_hallucinated * 100).toFixed(1)}%${unsure} (fitted on RAGTruth train data; a rough guide that tends to run high on QA)`, 'note'));
             }
             const table = el('table', null, 'claims');
             const head = el('tr');
