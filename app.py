@@ -91,6 +91,7 @@ class VerifyRequest(BaseModel):
     context: str
     answer: str
     task: str | None = None
+    experimental: bool = True  # False skips the (slower) claim-level check
 
 
 def _experimental(context: str, answer: str, task: str | None) -> dict:
@@ -155,7 +156,9 @@ def verify(req: VerifyRequest):
         "engines_agree": result["engines_agree"],
         "models": result["models"],
         "warnings": result["warnings"],
-        "experimental": _experimental(req.context, req.answer, req.task),
+        "experimental": _experimental(req.context, req.answer, req.task) if req.experimental else {
+            "engine": "Claim-level verifier (experimental)", "available": False,
+            "reason": "Switched off for speed. Tick the box in the sidebar to run it."},
         "latency_ms": (time.perf_counter() - start) * 1000.0,
     }
 

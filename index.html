@@ -161,6 +161,9 @@
         <div class="radio-group" id="scenario-selector">
             <!-- Populated by JS -->
         </div>
+        <div style="margin-top: 6px; color: #cbd5e1; font-size: 14px;">
+            <label style="cursor: pointer;"><input type="checkbox" id="exp-toggle" checked style="accent-color: #0ea5e9; margin-right: 8px;">Run the experimental claim-level check (slower)</label>
+        </div>
 
         <hr>
         
@@ -192,6 +195,8 @@
                 <textarea id="answer-input"></textarea>
             </div>
         </div>
+
+        <div class="note" id="scenario-note"></div>
 
         <button id="scan-btn" onclick="executeScan()">🚀 Execute Guardrail Scan</button>
 
@@ -228,38 +233,63 @@
     <script>
         // Store scenarios exactly as you had them in Streamlit
         const scenarios = {
-            "Custom (Paste your own)": { "context": "", "answer": "" },
+            "Custom (Paste your own)": {
+                        "context": "",
+                        "answer": "",
+                        "note": "Paste any context and answer to test your own case."
+            },
             "✅ Safe: University Rules": {
-                "context": "The Master of Computer Applications (MCA) program requires a final semester project for graduation. Students must submit their reports by the end of November.",
-                "answer": "A final semester project is required to graduate from the MCA program, and the report submission deadline is the end of November."
+                        "context": "The Master of Computer Applications (MCA) program requires a final semester project for graduation. Students must submit their reports by the end of November.",
+                        "answer": "A final semester project is required to graduate from the MCA program, and the report submission deadline is the end of November.",
+                        "note": "A faithful restatement of the context."
             },
             "✅ Safe: C++ OOP Principles": {
-                "context": "In C++, the Strategy pattern defines a family of algorithms, encapsulates each one, and makes them interchangeable at runtime without altering the client code.",
-                "answer": "The Strategy pattern in C++ allows interchangeable algorithms to be encapsulated and swapped during runtime."
+                        "context": "In C++, the Strategy pattern defines a family of algorithms, encapsulates each one, and makes them interchangeable at runtime without altering the client code.",
+                        "answer": "The Strategy pattern in C++ allows interchangeable algorithms to be encapsulated and swapped during runtime.",
+                        "note": "A faithful restatement of the context."
             },
-            "✅ Safe: Data Science Pipelines": {
-                "context": "Data normalization scales numerical variables into a standard range, usually 0 to 1, to prevent features with larger variance from dominating the machine learning model.",
-                "answer": "To stop features with high variance from dominating a model, data normalization is used to scale numerical variables between 0 and 1."
+            "✅ Safe: Faithful Paraphrase (Python)": {
+                        "context": "Python is an interpreted, high-level programming language created by Guido van Rossum.",
+                        "answer": "Python is a high-level, interpreted programming language created by Guido van Rossum.",
+                        "note": "Near-verbatim paraphrase: every detail of the context is kept and nothing is added."
             },
-            "✅ Safe: Pure Fact Matching": {
-                "context": "Python is an interpreted, high-level programming language created by Guido van Rossum.",
-                "answer": "Guido van Rossum designed Python, which executes code line-by-line rather than being compiled."
+            "✅ Safe: Faithful Paraphrase (Normalization)": {
+                        "context": "Data normalization scales numerical variables into a standard range, usually 0 to 1, to prevent features with larger variance from dominating the machine learning model.",
+                        "answer": "Data normalization scales numerical variables into a standard range, usually 0 to 1, so that features with larger variance do not dominate the machine learning model.",
+                        "note": "Near-verbatim paraphrase: every detail of the context is kept, including the word 'usually'."
+            },
+            "⚠️ Borderline: Paraphrase Drops 'usually'": {
+                        "context": "Data normalization scales numerical variables into a standard range, usually 0 to 1, to prevent features with larger variance from dominating the machine learning model.",
+                        "answer": "To stop features with high variance from dominating a model, data normalization is used to scale numerical variables between 0 and 1.",
+                        "note": "The context says 'usually 0 to 1'; the answer says 'between 0 and 1', which is slightly stronger. A strict detector may flag it: this shows the false-alarm side of the threshold."
+            },
+            "⚠️ Borderline: True but Not in the Context": {
+                        "context": "Python is an interpreted, high-level programming language created by Guido van Rossum.",
+                        "answer": "Guido van Rossum designed Python, which executes code line-by-line rather than being compiled.",
+                        "note": "The extra claim about line-by-line execution is not in the context (and is a simplification). Faithfulness checking flags claims the context does not support, even when they sound right."
             },
             "🚨 Risk: Corporate HR Policy": {
-                "context": "Employees are entitled to 14 days of paid leave per year. Remote work is strictly prohibited on Mondays and Fridays.",
-                "answer": "Yes, you can work from home on Mondays as long as you inform your manager."
+                        "context": "Employees are entitled to 14 days of paid leave per year. Remote work is strictly prohibited on Mondays and Fridays.",
+                        "answer": "Yes, you can work from home on Mondays as long as you inform your manager.",
+                        "note": "The answer contradicts the context."
             },
             "🚨 Risk: C++ Memory Management": {
-                "context": "Dynamic memory allocated with the 'new' keyword in C++ must be manually deallocated using 'delete' to prevent memory leaks.",
-                "answer": "C++ automatically uses a garbage collector to delete memory allocated with 'new', so manual deallocation is not required."
+                        "context": "Dynamic memory allocated with the 'new' keyword in C++ must be manually deallocated using 'delete' to prevent memory leaks.",
+                        "answer": "C++ automatically uses a garbage collector to delete memory allocated with 'new', so manual deallocation is not required.",
+                        "note": "The answer contradicts the context."
             },
             "🚨 Risk: Tech Support Manual": {
-                "context": "To hard reset the server, hold the red power button for 10 seconds. Do not unplug the main power cable during this process.",
-                "answer": "To reset, immediately unplug the main power cable from the wall."
+                        "context": "To hard reset the server, hold the red power button for 10 seconds. Do not unplug the main power cable during this process.",
+                        "answer": "To reset, immediately unplug the main power cable from the wall.",
+                        "note": "The answer contradicts the context."
             }
-        };
+};
 
         // Initialize Sidebar Radios
+        function setNote(scenario) {
+            document.getElementById('scenario-note').textContent = scenario.note || '';
+        }
+
         const selector = document.getElementById('scenario-selector');
         const ctxInput = document.getElementById('context-input');
         const ansInput = document.getElementById('answer-input');
@@ -275,12 +305,14 @@
                 radio.checked = true;
                 ctxInput.value = value.context;
                 ansInput.value = value.answer;
+                setNote(value);
                 isFirst = false;
             }
             
             radio.addEventListener('change', (e) => {
                 ctxInput.value = scenarios[e.target.value].context;
                 ansInput.value = scenarios[e.target.value].answer;
+                setNote(scenarios[e.target.value]);
                 document.getElementById('results-container').style.display = 'none';
             });
 
@@ -358,7 +390,7 @@
                 const response = await fetch('/api/verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ context, answer })
+                    body: JSON.stringify({ context, answer, experimental: document.getElementById('exp-toggle').checked })
                 });
                 const data = await response.json();
                 if (!response.ok) {

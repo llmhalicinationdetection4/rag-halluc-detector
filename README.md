@@ -29,6 +29,8 @@ Dashboard (needs the verification models, about 1.5 GB downloaded on the first s
 pip install -r requirements-app.txt
 python -m halludetect serve            # opens http://127.0.0.1:8000
 ```
+The demo scenarios in the sidebar are 4 safe cases, 2 borderline cases (a paraphrase that drops 'usually', and a statement that is true but not in the context) and 3 risk cases.
+The borderline cases show the false-alarm side of the threshold and are kept on purpose. Thresholds are never tuned on them. Untick the sidebar box to skip the slower experimental claim-level check.
 `python -m spacy download en_core_web_sm` is needed for `inject` and improves sentence splitting; without it the claim-level
 verifier falls back to a regex splitter.
 

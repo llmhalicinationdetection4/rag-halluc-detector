@@ -77,3 +77,13 @@ def write_fake_ragtruth(folder, sources_per_split=(20, 12)):
             for row in rows:
                 f.write(json.dumps(row) + "\n")
     return folder
+
+
+class FakeHHEM:
+    """Consistency 0.95 when every answer word occurs in the context, else 0.20."""
+
+    model_name = "fake-hhem"
+
+    def predict_consistency(self, pairs):
+        return np.array([0.95 if set(re.findall(r"\w+", a.lower())) <= set(re.findall(r"\w+", c.lower())) else 0.20
+                         for c, a in pairs])

@@ -91,6 +91,21 @@ def phase4_cmd(
     run_phase4(cfg, latency_n=latency_n, target_accuracy=target_accuracy, device=device)
 
 
+@app.command("ensemble")
+def ensemble_cmd(
+    injected: bool = typer.Option(True, "--injected/--no-injected", help="Also compare on the Phase 2 injected errors (needs `inject` and `analyze`)"),
+    device: Optional[str] = typer.Option(None, help="Device: cuda | cpu (default: from the config)"),
+    config: Optional[Path] = typer.Option(None, help="Path to a config YAML"),
+):
+    """Phase 4b: combine HHEM, NLI and claim-level scores in one model chosen on train (needs `phase3`)."""
+    from halludetect.config import load_config, set_seed
+    from halludetect.eval.run_ensemble import run_ensemble
+
+    cfg = load_config(config)
+    set_seed(cfg.seed)
+    run_ensemble(cfg, device=device, injected=injected)
+
+
 @app.command("inspect-ragtruth")
 def inspect_cmd(
     dir: Optional[Path] = typer.Option(None, help="Folder with response.jsonl and source_info.jsonl"),

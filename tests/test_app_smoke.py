@@ -33,9 +33,10 @@ class StubDetector:
 
 class StubClaims:
     def __init__(self, p_entail=0.2, p_contra=0.1):
-        self.p_entail, self.p_contra = p_entail, p_contra
+        self.p_entail, self.p_contra, self.calls = p_entail, p_contra, 0
 
     def verify(self, context, answer, task=None):
+        self.calls += 1
         claim = {"text": "A claim.", "start": 0, "end": 8, "p_entail": self.p_entail, "p_neutral": 0.5,
                  "p_contra": self.p_contra, "score": self.p_entail, "evidence": "some evidence"}
         return {"claims": [claim], "n_chunks": 1,
@@ -110,3 +111,26 @@ def test_every_element_the_page_script_uses_exists_in_the_page():
     used = set(re.findall(r"getElementById\(['\"]([\w-]+)['\"]\)", html))
     defined = set(re.findall(r'id="([\w-]+)"', html))
     assert used and used <= defined, f"missing ids: {used - defined}"
+
+
+def test_the_claim_level_check_can_be_switched_off_for_speed():
+    claims = StubClaims()
+    summary = {"best_aggregation": "min_entail", "best_threshold": 0.5}
+    client = _state(StubDetector(), claims, summary)
+    off = client.post("/api/verify", json={**BODY, "experimental": False}).json()
+    assert off["experimental"]["available"] is False and "Switched off" in off["experimental"]["reason"] and claims.calls == 0
+    on = client.post("/api/verify", json=BODY).json()                      # on by default
+    assert on["experimental"]["available"] is True and claims.calls == 1
+
+
+def test_demo_scenarios_are_well_formed_and_cover_safe_borderline_and_risk_cases():
+    import json
+
+    html = (ROOT / "index.html").read_text(encoding="utf-8")
+    start = html.index("const scenarios = ") + len("const scenarios = ")
+    scenarios = json.loads(html[start:html.index("};", start) + 1])
+    keys = [k for k in scenarios if not k.startswith("Custom")]
+    assert len(keys) == len(set(keys))
+    assert sum(k.startswith("✅") for k in keys) >= 4 and sum(k.startswith("⚠️") for k in keys) >= 2 and sum(k.startswith("🚨") for k in keys) >= 3
+    for key in keys:
+        assert scenarios[key]["context"].strip() and scenarios[key]["answer"].strip() and scenarios[key]["note"].strip(), key
