@@ -104,6 +104,7 @@ def test_the_page_is_served_and_has_no_hard_coded_results():
     html = _state().get("/").text
     assert "Nova" in html
     assert "0.991" not in html and "active_engine" not in html and "Mock" not in html
+    assert "does not check real-world truth" in html
 
 
 def test_every_element_the_page_script_uses_exists_in_the_page():

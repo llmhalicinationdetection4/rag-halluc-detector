@@ -1,0 +1,20 @@
+{
+  "chosen_feature_set": "hhem+claim",
+  "features": [
+    "h_hhem",
+    "h_max_contra",
+    "h_min_entail",
+    "h_mean_entail",
+    "h_share_unsupported"
+  ],
+  "C": 10.0,
+  "tau": 0.32893165024802934,
+  "cv_auc_by_feature_set": {
+    "hhem": 0.8322,
+    "claim": 0.6697,
+    "hhem+claim": 0.8297,
+    "hhem+nli+claim": 0.829
+  },
+  "n_train": 3000,
+  "note": "feature set, C and tau were chosen on the train subset only (cross-validated); test results are in ensemble_by_task.csv"
+}

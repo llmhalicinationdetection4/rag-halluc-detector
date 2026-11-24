@@ -11,6 +11,7 @@ the tool scores factual consistency and flags answers that are unsupported or co
 | 2 | Injected-error test set and failure analysis (`inject`, `analyze`) | done (results below) |
 | 3 | Claim-level verifier, tuned on train, evaluated per task, ablations (`phase3`, `ablate`) | done (results below) |
 | 4 | Calibration (ECE), abstention, latency (`phase4`) | done (results below) |
+| 4b | Combined HHEM + claim-level model (`ensemble`) | done (results below); not adopted, HHEM stays the verdict |
 | 5 | Dashboard: FastAPI (`app.py`) + `index.html` | done; HHEM gives the verdict, the claim-level verifier is shown as experimental |
 
 Every number in the Results section is generated from the CSV/JSON files in `results/`; none is a placeholder.
@@ -42,6 +43,7 @@ python -m halludetect analyze                   # Phase 2: scores it with both v
 python -m halludetect phase3                    # Phase 3: claim-level verifier (train subset + full test), resumable
 python -m halludetect ablate                    # Phase 3: ablations on a fixed test subset
 python -m halludetect phase4                    # Phase 4: calibration, abstention, latency
+python -m halludetect ensemble                  # Phase 4b: HHEM + claim-level combined model (needs `analyze` for the injected part)
 python -m halludetect serve                     # Phase 5: dashboard
 ```
 Other commands: `verify` (one pair, JSON), `eval --dataset demo` (20 handwritten examples, no downloads), `inspect-ragtruth`.
@@ -162,6 +164,37 @@ RAGTruth's own annotations (test split; the "subtle conflict" group has only 15 
 | faithful, good quality | 1732 | false-positive rate | 0.307 | 0.824 |
 | faithful, incorrect refusal | 24 | false-positive rate | 0.000 | 0.958 |
 
+### Phase 4b: does combining HHEM with the claim-level scores help?
+A logistic regression over HHEM's score and the claim-level scores (optionally also the whole-context NLI score). The feature set and its regularisation were
+chosen by 5-fold cross-validated AUC on the 3000-response train subset; the decision threshold was tuned on out-of-fold train probabilities. Nothing was chosen on test.
+
+| Feature set | Features | Train cross-validated AUC | Chosen? |
+|---|---|---|---|
+| hhem | 1 | 0.8322 | reference only |
+| claim | 4 | 0.6697 | reference only |
+| hhem+claim | 5 | 0.8297 | yes (best combination) |
+| hhem+nli+claim | 6 | 0.8290 |  |
+
+On the train data no combination beat HHEM alone. Test results for the chosen combination:
+
+| Task | HHEM alone, AUC | Combined model, AUC | Combined minus HHEM (paired 95% CI) | HHEM F1 | Combined F1 | F1 if everything is flagged |
+|---|---|---|---|---|---|---|
+| All tasks (pooled) | 0.835 (0.820 to 0.850) | 0.836 (0.819 to 0.851) | +0.000 (-0.005 to +0.006) | 0.694 | 0.708 | 0.518 |
+| QA | 0.851 (0.815 to 0.883) | 0.819 (0.773 to 0.860) | -0.032 (-0.054 to -0.015) | 0.563 | 0.579 | 0.302 |
+| Summary | 0.784 (0.748 to 0.821) | 0.811 (0.776 to 0.846) | +0.027 (+0.004 to +0.051) | 0.523 | 0.538 | 0.370 |
+| Data-to-text | 0.631 (0.591 to 0.669) | 0.638 (0.600 to 0.677) | +0.008 (+0.001 to +0.015) | 0.792 | 0.791 | 0.783 |
+
+The same model on the Phase 2 injected errors (pair accuracy, 0.5 = no signal; *caught* is measured at each model's own tuned threshold):
+
+| Injected error | Pairs | HHEM pair accuracy (95% CI) | Claim-level alone | Combined model (95% CI) | HHEM caught | Combined caught |
+|---|---|---|---|---|---|---|
+| All error types | 2612 | 0.865 (0.853 to 0.878) | 0.786 | 0.900 (0.889 to 0.912) | 0.505 | 0.522 |
+| Number swap | 600 | 0.980 (0.968 to 0.990) | 0.766 | 0.987 (0.977 to 0.995) | 0.672 | 0.673 |
+| Entity swap | 586 | 0.657 (0.619 to 0.695) | 0.679 | 0.742 (0.712 to 0.775) | 0.045 | 0.076 |
+| Negation flip | 600 | 0.783 (0.750 to 0.817) | 0.716 | 0.843 (0.814 to 0.870) | 0.319 | 0.360 |
+| Date change | 226 | 0.996 (0.982 to 1.000) | 0.885 | 1.000 (1.000 to 1.000) | 0.801 | 0.822 |
+| Unsupported added sentence | 600 | 0.987 (0.977 to 0.995) | 0.944 | 0.988 (0.980 to 0.995) | 0.817 | 0.811 |
+
 ### What the results say
 - **HHEM is the best detector here** (pooled ROC-AUC 0.835). The claim-level verifier does **not** beat it: it is significantly worse on QA and summaries and statistically tied on data-to-text.
 - **The claim-level verifier clearly beats whole-context NLI** in every task (pooled +0.143 AUC, paired 95% CI 0.118 to 0.167).
@@ -172,6 +205,11 @@ RAGTruth's own annotations (test split; the "subtle conflict" group has only 15 
   The NLI model ranks entity swaps much better (pair accuracy 0.826), so the two models are complementary.
 - **Whole-context NLI is not usable at its tuned threshold:** it flags 82% of faithful responses and 96% of refusals; HHEM flags 31% of faithful responses and none of the refusals.
 - **Data-to-text stays near chance for every detector** (AUC 0.50 to 0.63).
+- **Combining HHEM with the claim-level scores does not improve detection overall:** pooled AUC 0.8356 against 0.8354 (paired difference +0.0003, 95% CI -0.005 to +0.006).
+  It is better on summaries (+0.027, interval just above zero), worse on QA (-0.032) and equal on data-to-text, so HHEM stays the verdict in the dashboard.
+- **The combined model ranks injected errors better than HHEM** (pair accuracy 0.900 against 0.865; the intervals do not overlap), most for entity swaps (0.742 against 0.657) and negations (0.843 against 0.783).
+  In absolute terms entity swaps are still mostly missed: 7.6% caught against 4.5% for HHEM. The whole-context NLI score alone ranks entity swaps best (pair accuracy 0.826) but cannot be used at its tuned threshold.
+
 
 ## Limitations
 - The NLI models read at most 512 tokens; HHEM reads the full context. Long contexts are therefore cut for the NLI baseline.
@@ -180,6 +218,7 @@ RAGTruth's own annotations (test split; the "subtle conflict" group has only 15 
 - Pooled numbers mix tasks with different hallucination rates; use the per-task rows.
 - Responses marked `incorrect_refusal` or `truncated` are included in Phases 1 and 3 (24 refusals and 1 truncated response in the faithful test group).
 - Injected errors are synthetic and rule-based: entity swaps use spaCy's small model, appended sentences come from a fixed pool of generic claims.
+- The combined model was fitted on real RAGTruth responses and evaluated on synthetic injected edits, and the injected-error intervals for HHEM and the combined model are not paired.
 - One run with one seed; confidence intervals are bootstrap intervals over responses, not over training runs.
 - CPU latency was not measured. The dashboard's demo scenarios are illustrations, not evidence, and thresholds are never tuned on them.
 
