@@ -45,6 +45,7 @@ python -m halludetect ablate                    # Phase 3: ablations on a fixed 
 python -m halludetect phase4                    # Phase 4: calibration, abstention, latency
 python -m halludetect ensemble                  # Phase 4b: HHEM + claim-level combined model (needs `analyze` for the injected part)
 python -m halludetect serve                     # Phase 5: dashboard
+python -m halludetect figures                   # report figures from results/ -> report/figures/ (needs matplotlib)
 ```
 Other commands: `verify` (one pair, JSON), `eval --dataset demo` (20 handwritten examples, no downloads), `inspect-ragtruth`.
 Each step writes its tables to `results/` (CSV/JSON are tracked in git, `results/cache` is not) and caches model scores, so an

@@ -106,6 +106,17 @@ def ensemble_cmd(
     run_ensemble(cfg, device=device, injected=injected)
 
 
+@app.command("figures")
+def figures_cmd(
+    out: Path = typer.Option(Path("report/figures"), help="Folder for the PNG files"),
+    results: Path = typer.Option(Path("results"), help="Folder with the result CSV/JSON files"),
+):
+    """Make the report figures from the files in results/ (no models needed)."""
+    from halludetect.report.figures import make_all
+
+    make_all(results, out)
+
+
 @app.command("inspect-ragtruth")
 def inspect_cmd(
     dir: Optional[Path] = typer.Option(None, help="Folder with response.jsonl and source_info.jsonl"),
